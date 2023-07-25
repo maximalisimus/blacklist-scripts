@@ -243,21 +243,17 @@ def show_commands_fine(args: Arguments):
 		before exiting the program. '''
 	if args.nftables:
 		if args.clearchain:
-			if (args.table != 'filter') ^ (args.chain != 'INPUT'):
-				if args.cmd:
-					print(switch_nftables(args, 'flush-chain'))
+			if args.cmd:
+				print(switch_nftables(args, 'flush-chain'))
 		if args.Delchain:
-			if (args.table != 'filter') ^ (args.chain != 'INPUT'):
-				if args.cmd:
-					print(switch_nftables(args, 'del-chain'))
+			if args.cmd:
+				print(switch_nftables(args, 'del-chain'))
 		if args.cleartable:
-			if args.table != 'filter':
-				if args.cmd:
-					print(switch_nftables(args, 'flush-table'))
+			if args.cmd:
+				print(switch_nftables(args, 'flush-table'))
 		if args.Deltable:
-			if args.table != 'filter':
-				if args.cmd:
-					print(switch_nftables(args, 'del-table'))
+			if args.cmd:
+				print(switch_nftables(args, 'del-table'))
 	if args.cmd:
 		sys.exit(0)
 
@@ -926,7 +922,7 @@ def servicework(args: Arguments):
 		for elem in range(len(data_white)):
 			args.current_ip = f"{data_white[elem]}"
 			on_vers = ip_to_version(args.current_ip, args.maxmask)
-			if on_vers == 6:
+			if on_vers == 6 and not args.ipv6:
 				args4_to_args6(args)
 			if not args.nftables:
 				ban_unban_one(args)
@@ -939,7 +935,7 @@ def servicework(args: Arguments):
 		for elem in range(len(data_black)):
 			args.current_ip = f"{data_black[elem]}"
 			on_vers = ip_to_version(args.current_ip, args.maxmask)
-			if on_vers == 6:
+			if on_vers == 6 and not args.ipv6:
 				args4_to_args6(args)
 			if not args.nftables:
 				ban_unban_one(args)
@@ -994,45 +990,23 @@ def servicework(args: Arguments):
 		if not args.nftables:
 			if args.cmd:
 				print(switch_iptables(args, 'read'))
-				args4_to_args6(args)
-				print(switch_iptables(args, 'read'))
-				args6_to_args4(args)
 				sys.exit(0)
 			args.iptables_info, err = shell_run(args.console, switch_iptables(args, 'read'))
 			if args.iptables_info != '':
-				print(f"\n----- IPTABLES Info -----\n{args.iptables_info}\n----- IPTABLES Info -----")
+				print(f"\n----- NETFILTER Info -----\n{args.iptables_info}\n----- NETFILTER Info -----")
 			if err != '':
 				_commands = switch_iptables(args, 'read')
 				print(f"----- ERROR Info -----\n{err}{_commands}\n----- ERROR Info -----")
-			args4_to_args6(args)
-			args.ip6tables_info, err6 = shell_run(args.console, switch_iptables(args, 'read'))
-			if args.ip6tables_info != '':
-				print(f"\n----- IP6TABLES Info -----\n{args.ip6tables_info}\n----- IP6TABLES Info -----")
-			if err6 != '':
-				_commands6 = switch_iptables(args, 'read')
-				print(f"----- ERROR Info -----\n{err6}{_commands6}\n----- ERROR Info -----")
-			args6_to_args4(args)
 		else:
 			if args.cmd:
 				print(switch_nftables(args, 'read'))
-				args4_to_args6(args)
-				print(switch_nftables(args, 'read'))
-				args6_to_args4(args)
 				sys.exit(0)
 			args.iptables_info, err = shell_run(args.console, switch_nftables(args, 'read'))
 			if args.iptables_info != '':
-				print(f"\n----- NFTABLES Info -----\n{args.iptables_info}\n----- NFTABLES Info -----")
+				print(f"\n----- NETFILTER Info -----\n{args.iptables_info}\n----- NETFILTER Info -----")
 			if err != '':
 				_commands = switch_nftables(args, 'read')
 				print(f"----- ERROR Info -----\n{err}{_commands}\n----- ERROR Info -----")
-			args4_to_args6(args)
-			args.ip6tables_info, err6 = shell_run(args.console, switch_nftables(args, 'read'))
-			if args.ip6tables_info != '':
-				print(f"\n----- NF6TABLES Info -----\n{args.ip6tables_info}\n----- NF6TABLES Info -----")
-			if err6 != '':
-				_commands6 = switch_nftables(args, 'read')
-				print(f"----- ERROR Info -----\n{err6}{_commands6}\n----- ERROR Info -----")
-			args6_to_args4(args)
 		sys.exit(0)
 	if args.start:
 		if args.cmd:
@@ -1053,12 +1027,13 @@ def servicework(args: Arguments):
 				print('Repeat commands for all ip addresses:')
 				print('\t',switch_nftables(args, 'add-white', 'NUM'))
 				print('\t',switch_nftables(args, 'add-black', 'NUM'))
-				args4_to_args6(args)
-				print(switch_nftables(args, 'search').replace('\t','\\t'))
-				print('Repeat commands for all ip addresses:')
-				print('\t',switch_nftables(args, 'add-white', 'NUM'))
-				print('\t',switch_nftables(args, 'add-black', 'NUM'))
-				args6_to_args4(args)
+				if not args.ipv6 and args.nftproto != 'inet':
+					args4_to_args6(args)
+					print(switch_nftables(args, 'search').replace('\t','\\t'))
+					print('Repeat commands for all ip addresses:')
+					print('\t',switch_nftables(args, 'add-white', 'NUM'))
+					print('\t',switch_nftables(args, 'add-black', 'NUM'))
+					args6_to_args4(args)
 			sys.exit(0)
 		print('Start the blacklist ...')
 		if not args.nftables:
@@ -1071,10 +1046,13 @@ def servicework(args: Arguments):
 		else:
 			args.iptables_info, err = shell_run(args.console, switch_nftables(args, 'search'))
 			_commands = switch_nftables(args, 'search').replace('\t','\\t')
-			args4_to_args6(args)
-			args.ip6tables_info, err6 = shell_run(args.console, switch_nftables(args, 'search'))
-			_commands6 = switch_nftables(args, 'search').replace('\t','\\t')
-			args6_to_args4(args)
+			if not args.ipv6 and args.nftproto != 'inet':
+				args4_to_args6(args)
+				args.ip6tables_info, err6 = shell_run(args.console, switch_nftables(args, 'search'))
+				_commands6 = switch_nftables(args, 'search').replace('\t','\\t')
+				args6_to_args4(args)
+			else:
+				args.ip6tables_info, err6, _commands6 = args.iptables_info, err, _commands
 		if args.nolog:
 			args.log_txt.append('Start the blacklist ...')
 		service_start_stop(args)
@@ -1105,12 +1083,13 @@ def servicework(args: Arguments):
 				print('Repeat commands for all ip addresses:')
 				print('\t',switch_nftables(args, 'del-white', 'NUM'))
 				print('\t',switch_nftables(args, 'del-black', 'NUM'))
-				args4_to_args6(args)
-				print(switch_nftables(args, 'search').replace('\t','\\t'))
-				print('Repeat commands for all ip addresses:')
-				print('\t',switch_nftables(args, 'del-white', 'NUM'))
-				print('\t',switch_nftables(args, 'del-black', 'NUM'))
-				args6_to_args4(args)
+				if not args.ipv6 and args.nftproto != 'inet':
+					args4_to_args6(args)
+					print(switch_nftables(args, 'search').replace('\t','\\t'))
+					print('Repeat commands for all ip addresses:')
+					print('\t',switch_nftables(args, 'del-white', 'NUM'))
+					print('\t',switch_nftables(args, 'del-black', 'NUM'))
+					args6_to_args4(args)
 			sys.exit(0)
 		print('Stopping the blacklist ...')
 		if not args.nftables:
@@ -1123,10 +1102,13 @@ def servicework(args: Arguments):
 		else:
 			args.iptables_info, err = shell_run(args.console, switch_nftables(args, 'search'))
 			_commands = switch_nftables(args, 'search').replace('\t','\\t')
-			args4_to_args6(args)
-			args.ip6tables_info, err6 = shell_run(args.console, switch_nftables(args, 'search'))
-			_commands6 = switch_nftables(args, 'search').replace('\t','\\t')
-			args6_to_args4(args)
+			if not args.ipv6 and args.nftproto != 'inet':
+				args4_to_args6(args)
+				args.ip6tables_info, err6 = shell_run(args.console, switch_nftables(args, 'search'))
+				_commands6 = switch_nftables(args, 'search').replace('\t','\\t')
+				args6_to_args4(args)
+			else:
+				args.ip6tables_info, err6, _commands6 = args.iptables_info, err, _commands
 		if args.nolog:
 			args.log_txt.append('Stopping the blacklist ...')
 		service_start_stop(args)
@@ -1173,16 +1155,17 @@ def servicework(args: Arguments):
 				print('Repeat commands for all ip addresses:')
 				print('\t',switch_nftables(args, 'add-white', 'NUM'))
 				print('\t',switch_nftables(args, 'add-black', 'NUM'))
-				args4_to_args6(args)
-				print(switch_nftables(args, 'search').replace('\t','\\t'))
-				print('Repeat commands for all ip addresses:')
-				print('\t',switch_nftables(args, 'del-white', 'NUM'))
-				print('\t',switch_nftables(args, 'del-black', 'NUM'))
-				print(switch_nftables(args, 'search').replace('\t','\\t'))
-				print('Repeat commands for all ip addresses:')
-				print('\t',switch_nftables(args, 'add-white', 'NUM'))
-				print('\t',switch_nftables(args, 'add-black', 'NUM'))
-				args6_to_args4(args)
+				if not args.ipv6 and args.nftproto != 'inet':
+					args4_to_args6(args)
+					print(switch_nftables(args, 'search').replace('\t','\\t'))
+					print('Repeat commands for all ip addresses:')
+					print('\t',switch_nftables(args, 'del-white', 'NUM'))
+					print('\t',switch_nftables(args, 'del-black', 'NUM'))
+					print(switch_nftables(args, 'search').replace('\t','\\t'))
+					print('Repeat commands for all ip addresses:')
+					print('\t',switch_nftables(args, 'add-white', 'NUM'))
+					print('\t',switch_nftables(args, 'add-black', 'NUM'))
+					args6_to_args4(args)
 			sys.exit(0)
 		print('Reload the blacklist ...')
 		if not args.nftables:
@@ -1195,10 +1178,13 @@ def servicework(args: Arguments):
 		else:
 			args.iptables_info, err = shell_run(args.console, switch_nftables(args, 'search'))
 			_commands = switch_nftables(args, 'search').replace('\t','\\t')
-			args4_to_args6(args)
-			args.ip6tables_info, err6 = shell_run(args.console, switch_nftables(args, 'search'))
-			_commands6 = switch_nftables(args, 'search').replace('\t','\\t')
-			args6_to_args4(args)
+			if not args.ipv6 and args.nftproto != 'inet':
+				args4_to_args6(args)
+				args.ip6tables_info, err6 = shell_run(args.console, switch_nftables(args, 'search'))
+				_commands6 = switch_nftables(args, 'search').replace('\t','\\t')
+				args6_to_args4(args)
+			else:
+				args.ip6tables_info, err6, _commands6 = args.iptables_info, err, _commands
 		if args.nolog:
 			args.log_txt.append('Reload the blacklist ...')
 			if err != '' or err6 != '':
@@ -1216,10 +1202,13 @@ def servicework(args: Arguments):
 		else:
 			args.iptables_info, err = shell_run(args.console, switch_nftables(args, 'search'))
 			_commands = switch_nftables(args, 'search').replace('\t','\\t')
-			args4_to_args6(args)
-			args.ip6tables_info, err6 = shell_run(args.console, switch_nftables(args, 'search'))
-			_commands6 = switch_nftables(args, 'search').replace('\t','\\t')
-			args6_to_args4(args)
+			if not args.ipv6 and args.nftproto != 'inet':
+				args4_to_args6(args)
+				args.ip6tables_info, err6 = shell_run(args.console, switch_nftables(args, 'search'))
+				_commands6 = switch_nftables(args, 'search').replace('\t','\\t')
+				args6_to_args4(args)
+			else:
+				args.ip6tables_info, err6, _commands6 = args.iptables_info, err, _commands
 		service_start_stop(args)
 		print('Exit the blacklist ...')
 		if args.nolog:
@@ -1388,16 +1377,19 @@ def listwork(args: Arguments):
 		else:
 			args.iptables_info, err = shell_run(args.console, switch_nftables(args, 'search'))
 			_commands = switch_nftables(args, 'search').replace('\t','\\t')
-			args4_to_args6(args)
-			args.ip6tables_info, err6 = shell_run(args.console, switch_nftables(args, 'search'))
-			_commands6 = switch_nftables(args, 'search').replace('\t','\\t')
-			args6_to_args4(args)	
+			if not args.ipv6 and args.nftproto != 'inet':
+				args4_to_args6(args)
+				args.ip6tables_info, err6 = shell_run(args.console, switch_nftables(args, 'search'))
+				_commands6 = switch_nftables(args, 'search').replace('\t','\\t')
+				args6_to_args4(args)
+			else:
+				args.ip6tables_info, err6, _commands6 = args.iptables_info, err, _commands	
 		if err != '' or err6 != '':
 			args.log_txt.append(f"----- ERROR Info -----\n{err}{_commands}{err6}{_commands6}\n----- ERROR Info -----")
 		for elem in range(len(args.ip)):
 			args.current_ip = ip_to_net(args.ip[elem], args.mask[elem]) if len(args.mask) > elem else ip_to_net(args.ip[elem], args.maxmask)
 			on_vers = ip_to_version(args.current_ip, args.maxmask)
-			if on_vers == 6:
+			if on_vers == 6 and not args.ipv6:
 				args4_to_args6(args)
 				args.current_ip = ip_to_net(args.ip[elem], args.mask[elem]) if len(args.mask) > elem else ip_to_net(args.ip[elem], args.maxmask)
 			if not args.nftables:
@@ -1476,13 +1468,14 @@ def listwork(args: Arguments):
 					print(switch_nftables(args, 'add-black', 'NUM'))
 				else:
 					print(switch_nftables(args, 'add-white', 'NUM'))
-				args4_to_args6(args)
-				print(switch_nftables(args, 'read'))
-				if args.onlist == 'black':
-					print(switch_nftables(args, 'add-black', 'NUM'))
-				else:
-					print(switch_nftables(args, 'add-white', 'NUM'))
-				args6_to_args4(args)
+				if not args.ipv6 and args.nftproto != 'inet':
+					args4_to_args6(args)
+					print(switch_nftables(args, 'read'))
+					if args.onlist == 'black':
+						print(switch_nftables(args, 'add-black', 'NUM'))
+					else:
+						print(switch_nftables(args, 'add-white', 'NUM'))
+					args6_to_args4(args)
 			sys.exit(0)
 		print('Ban the blacklist or ignore the whitelist ip addresses ...')
 		if args.nolog:
@@ -1514,13 +1507,14 @@ def listwork(args: Arguments):
 					print(switch_nftables(args, 'del-black', 'NUM'))
 				else:
 					print(switch_nftables(args, 'del-white', 'NUM'))
-				args4_to_args6(args)
-				print(switch_nftables(args, 'search').replace('\t','\\t'))
-				if args.onlist == 'black':
-					print(switch_nftables(args, 'del-black', 'NUM'))
-				else:
-					print(switch_nftables(args, 'del-white', 'NUM'))
-				args6_to_args4(args)
+				if not args.ipv6 and args.nftproto != 'inet':
+					args4_to_args6(args)
+					print(switch_nftables(args, 'search').replace('\t','\\t'))
+					if args.onlist == 'black':
+						print(switch_nftables(args, 'del-black', 'NUM'))
+					else:
+						print(switch_nftables(args, 'del-white', 'NUM'))
+					args6_to_args4(args)
 			sys.exit(0)
 		print('Unban the blacklist or delete ignored the whitelist ip addresses ...')
 		if args.nolog:
