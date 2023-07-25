@@ -292,7 +292,30 @@ options:
 ```bash
  $ ./py-blacklist.py black
 
+usage: py-blacklist.py black [-h] [-ban] [-unban] [-a] [-d] [-s] [-j] [-save]
+                             [-o OUTPUT] [-empty] [-ip IP [IP ...]]
+                             [-m MASK [MASK ...]]
 
+Опции:
+  -h, --help            Показать справку и выйти
+  -ban, --ban           Заблокировать ip-адреса в {IP,IP6,NF}TABLES.
+  -unban, --unban       Разблокировать ip-адреса в {IP,IP6,NF}TABLES.
+  -a, --add             Добавить в черный список.
+  -d, --delete          Удалить из черного списка.
+  -s, --show            Посмотреть черный список.
+  -j, --json            JSON формат просмотра.
+  -save, --save         Сохранить.
+  -o OUTPUT, --output OUTPUT
+                        Выходной файл черного списка.
+  -empty, --empty       Очистить черный список. Используйте осторожно!
+
+Addressing:
+  IP address management.
+
+  -ip IP [IP ...], --ip IP [IP ...]
+                        IP адреса.
+  -m MASK [MASK ...], --mask MASK [MASK ...]
+                        Маски сетей.
 ```
 
 Рассмотрим меню white.
@@ -300,7 +323,30 @@ options:
 ```bash
  $ ./py-blacklist.py white
 
+usage: py-blacklist.py white [-h] [-ban] [-unban] [-a] [-d] [-s] [-j] [-save]
+                             [-o OUTPUT] [-empty] [-ip IP [IP ...]]
+                             [-m MASK [MASK ...]]
 
+Опции:
+  -h, --help            Показать справку и выйти
+  -ban, --ban           Разрешить ip-адреса в {IP,IP6,NF}TABLES.
+  -unban, --unban       Удалить разрешения из {IP,IP6,NF}TABLES.
+  -a, --add             Добавить в белый список.
+  -d, --delete          Удалить из белого списка.
+  -s, --show            Посмотреть белый список.
+  -j, --json            JSON формат просмотра.
+  -save, --save         Сохранить.
+  -o OUTPUT, --output OUTPUT
+                        Выходной файл белого списка.
+  -empty, --empty       Очистить белый список. Используйте осторожно!
+
+Addressing:
+  IP address management.
+
+  -ip IP [IP ...], --ip IP [IP ...]
+                        IP адреса.
+  -m MASK [MASK ...], --mask MASK [MASK ...]
+                        Маски сетей.
 ```
 
 ---
