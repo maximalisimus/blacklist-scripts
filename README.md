@@ -281,7 +281,7 @@ options:
                         (по умолчанию "blacklist").
  ```
  
- По умолчанию в прогрумму встроен метод работы из любого каталога. Если вы не устанавливали программу с помощью **Makefile**, вам может потребоваться функция создания символьной ссылки на скрипт в **«/usr/bin/»** и также безопасного удаления этой символьной ссылки. В качестве бонуса можете даже изменить наименование символьной ссылки, чтобы вам было удобно обращаться к скрипту без указания полного пути и его наименования.
+По умолчанию в прогрумму встроен метод работы из любого каталога. Если вы не устанавливали программу с помощью **Makefile**, вам может потребоваться функция создания символьной ссылки на скрипт в **«/usr/bin/»** и также безопасного удаления этой символьной ссылки. В качестве бонуса можете даже изменить наименование символьной ссылки, чтобы вам было удобно обращаться к скрипту без указания полного пути и его наименования.
 
 При запуске, остановке или перезапуске программы обработаны будут оба списка - и черный и белый. При этом белый список будет внесён в **Netfilter** с обязательными разрешающими правилами, а черный с запрещающими. 
 
@@ -356,6 +356,13 @@ Addressing:
 ```bash
 
 ./py-blacklist.py black -ip 192.168.0.2 2001:db8:abf2:29ea:5298:ad71:2ca0:4ff1 -a -save
+```
+
+или так:
+
+```bash
+
+./py-blacklist.py black -ip 192.168.0.2/32 2001:db8:abf2:29ea:5298:ad71:2ca0:4ff1/128 -a -save
 ```
 
 Обратите внимание на то, что если вы не будете указывать маску - она будет применена автоматически. По умолчанию автоматическая маска ставится максимальной согласно протоколу адреса - **IPV4** или **IPV6**.
@@ -479,7 +486,276 @@ To remove the program and/or additional functions for **Fail2ban**-and in **Make
 
 ## <a name="ShowUtilitesEng">2. Utility Overview.</a>
 
+The program's help looks like this (Parameters and keys.):
 
+```bash
+./py-blacklist.py -h
+
+usage: py-blacklist.py [-h] [-v] [-info] [-c COUNT] [-q QUANTITY]
+                       [-wd WORKDIR] [-b BLACKLIST] [-w WHITELIST] [-personal]
+                       [-e] [-run] [-fine] [-ipv6] [-nft]
+                       [-nftproto {ip,ip6,inet}] [-table TABLE] [-chain CHAIN]
+                       [-newtable] [-newchain] [-Deltable] [-Delchain]
+                       [-cleartable] [-clearchain] [-con CONSOLE] [-cmd] [-sd]
+                       [-logfile LOGFILE] [-nolog] [-limit] [-viewlog]
+                       [-resetlog]
+                       {systemd,service,black,white} ...
+
+The Fail2Ban black and white lists in Python.
+
+options:
+  -h, --help            show this help message and exit
+  -v, --version         Version.
+  -info, --info         Information about the author.
+
+Management:
+  Management commands.
+
+  {systemd,service,black,white}
+                        commands help.
+    systemd             Systemd management.
+    service             Program management.
+    black               Managing blacklists.
+    white               Managing whitelists.
+
+Parameters:
+  Settings for the number of bans.
+
+  -c COUNT, --count COUNT
+                        The number of locks after which the ip-address is
+                        entered in {IP,IP6,NF}TABLES (default 0).
+  -q QUANTITY, --quantity QUANTITY
+                        The number of ip address locks to be saved (default
+                        0).
+
+Files:
+  Working with files.
+
+  -wd WORKDIR, --workdir WORKDIR
+                        Working directory.
+  -b BLACKLIST, --blacklist BLACKLIST
+                        Input blacklist file.
+  -w WHITELIST, --whitelist WHITELIST
+                        Input whitelist file.
+
+NFTABLES:
+  Configuration NFTABLES.
+
+  -personal, --personal
+                        Personal settings of NFTABLES tables, regardless of
+                        the data entered.
+  -e, -exit, --exit     Finish creating the table/chain on NFTABLES.
+  -run, --run           Full starting NFTABLES tables from all settings. Use
+                        carefully!
+  -fine, --fine         Full clearing NFTABLES tables from all settings. Use
+                        carefully!
+  -ipv6, --ipv6         Forced IPV6 protocol selection.
+  -nft, --nftables      Select the NFTABLES framework (Default IP(6)TABLES).
+  -nftproto {ip,ip6,inet}, --nftproto {ip,ip6,inet}
+                        Select the protocol NFTABLES, before rule (Auto ipv4
+                        on "ip" or -ipv6 to "ip6").
+  -table TABLE, --table TABLE
+                        Select the table for NFTABLES (Default "filter").
+  -chain CHAIN, --chain CHAIN
+                        Choosing a chain of rules (Default: "INPUT").
+  -newtable, --newtable
+                        Add a new table in NFTABLES. Use carefully!
+  -newchain, --newchain
+                        Add a new chain in NFTABLES. Use carefully!
+  -Deltable, --Deltable
+                        Del the table in NFTABLES. Use carefully!
+  -Delchain, --Delchain
+                        Del the chain in NFTABLES. Use carefully!
+  -cleartable, --cleartable
+                        Clear the table in NFTABLES. Use carefully!
+  -clearchain, --clearchain
+                        Clear the chain in NFTABLES. Use carefully!
+
+Settings:
+  Configurations.
+
+  -con CONSOLE, --console CONSOLE
+                        Enther the console name (Default "sh").
+  -cmd, --cmd           View the command and exit the program without
+                        executing it.
+  -sd, --showdir        Show working directory.
+  -logfile LOGFILE, --logfile LOGFILE
+                        Log file.
+  -nolog, --nolog       Do not log events.
+  -limit, --limit       Limit the log file. Every day the contents of the log
+                        will be completely erased.
+  -viewlog, --viewlog   View the log file.
+  -resetlog, --resetlog
+                        Reset the log file.
+```
+
+At the same time, if you do not enter any keys, the user is automatically redirected to the help page, and in any menu and sub-menu.
+
+For the keys **NFTABLES** it is necessary to make an explanation.
+
+When you enter the *-nft* key, you start working with **NFTABLES**. Without it, you will work with **IPTABLES** and **IP6TABLES**.
+
+When selecting the *-personal* key and the *-nft* key, the program will select <u>predefined</u> tables and chains in the **NFTABLES** framework. It does not matter what you will try to enter with the corresponding keys. All values will be redefined programmatically.
+
+The same goes for the *-run* and *-fine* keys. The first one is defined instead of using 2 keys *-newtable* and *-newchain*. Well, that is, when both of the last keys are used, it is easier to specify one *-run* instead of 2 keys. For *-fine*, respectively, there will be a similar appeal to all the functions of cleaning and deleting tables and chains after the application is shut down.
+
+Also, such an appeal using the above keys will be automatically applied in the Systemd service management menu, i.e. taken into account when creating the service and timer.
+
+Or you can use any other keys without *-personal*, *-run* and *-fine* separately and independently, for example, to monitor or create certain tables or chains.
+
+When deleting and cleaning tables and chains, there are certain limitations associated with standard tables and chains of the system in packages with a compatibility layer between **NFTABLES** and **IP(6)TABLES** Netfilter. Therefore, do not be surprised if the table or chain has not been deleted from the system or has not been cleaned up. This is done only for security. 
+
+But, there is one little trick. You can use the keys **-cmd**, **-fine** and **-e** to look at all the completion commands, and use them at your own risk. Or use the appropriate keys to change the name of tables and/or chains and again specify **-cmd**, **-fine** and **-e** to look at all completion commands with changed values and also use them at your own risk.
+
+Another explanation concerns the choice of protocol **-ipv6**. In general, when entering ip addresses, the protocol is determined automatically and also automatically corrected. However, the protocol can be forcibly changed.
+
+Consider the Systemd menu.
+
+```bash
+./py-blacklist.py systemd
+
+Systemd file «blacklist@.service» and «blacklist@.timer» not found!
+Please enter «-create» to create system files before accessing Systemd functions!
+
+usage: py-blacklist.py systemd [-h] [-create] [-delete] [-status] [-istimer]
+                               [-isservice] [-enable] [-disable] [-start]
+                               [-stop] [-reload] [-starttimer] [-stoptimer]
+
+options:
+  -h, --help            show this help message and exit
+  -create, --create     Create «blacklist@.service» and «blacklist@.timer».
+  -delete, --delete     Delete «blacklist@.service» and «blacklist@.timer».
+  -status, --status     Status «blacklist@.service».
+  -istimer, --istimer   Check the active and enabled is «blacklist@.timer».
+  -isservice, --isservice
+                        Check the active and enabled is «blacklist@.service».
+  -enable, --enable     Enable «blacklist@.timer».
+  -disable, --disable   Disable «blacklist@.timer».
+  -start, --start       Start «blacklist@.service».
+  -stop, --stop         Stop «blacklist@.service».
+  -reload, --reload     Reload «blacklist@.service».
+  -starttimer, --starttimer
+                        Start «blacklist@.timer».
+  -stoptimer, --stoptimer
+                        Stop «blacklist@.timer».
+```
+
+Consider the Service menu.
+
+```bash
+./py-blacklist.py service
+
+usage: py-blacklist.py service [-h] [-start] [-stop] [-nostop] [-reload]
+                               [-show] [-link] [-unlink] [-name NAME]
+
+options:
+  -h, --help            show this help message and exit
+  -start, --start       Launching the blacklist.
+  -stop, --stop         Stopping the blacklist.
+  -nostop, --nostop     Stopping the blacklist without clearing
+                        {IP,IP6,NF}TABLES.
+  -reload, --reload     Restarting the blacklist.
+  -show, --show         Show the status of NETFILTER tables.
+  -link, --link         Symlink to program on «/usr/bin/».
+  -unlink, --unlink     Unlink to program on «/usr/bin/».
+  -name NAME, --name NAME
+                        The name of the symlink for the location in the
+                        programs directory is «/usr/bin/». (Default
+                        "blacklist").
+```
+
+By default, the program has a built-in method of working from any directory. If you did not install the program using **Makefile**, you may need the function of creating a symbolic link to the script in **"/usr/bin/"** and also safely deleting this symbolic link. As a bonus, you can even change the name of the symbolic link so that it is convenient for you to access the script without specifying the full path and its name.
+
+When starting, stopping or restarting the program, both black and white lists will be processed. In this case, the white list will be entered in **Netfilter** with mandatory permissive rules, and the black list with forbidding ones. 
+
+The program can be run multiple times. Unlike manual control using commands via the terminal, there is protection against re-adding the IP address both to the **NetFilter** tables and to the list files themselves.
+
+Consider the black menu.
+
+```bash
+./py-blacklist.py black
+
+usage: py-blacklist.py black [-h] [-ban] [-unban] [-a] [-d] [-s] [-j] [-save]
+                             [-o OUTPUT] [-empty] [-ip IP [IP ...]]
+                             [-m MASK [MASK ...]]
+
+options:
+  -h, --help            show this help message and exit
+  -ban, --ban           Block IP addresses in {IP,IP6,NF}TABLES.
+  -unban, --unban       Unblock IP addresses in {IP,IP6,NF}TABLES.
+  -a, --add             Add to the blacklist.
+  -d, --delete          Remove from the blacklist.
+  -s, --show            Read the blacklist.
+  -j, --json            JSON fromat show.
+  -save, --save         Save show info.
+  -o OUTPUT, --output OUTPUT
+                        Output blacklist file.
+  -empty, --empty       Clear the blacklist. Use carefully!
+
+Addressing:
+  IP address management.
+
+  -ip IP [IP ...], --ip IP [IP ...]
+                        IP addresses.
+  -m MASK [MASK ...], --mask MASK [MASK ...]
+                        Network Masks.
+```
+
+Consider the white menu.
+
+```bash
+./py-blacklist.py white
+
+usage: py-blacklist.py white [-h] [-ban] [-unban] [-a] [-d] [-s] [-j] [-save]
+                             [-o OUTPUT] [-empty] [-ip IP [IP ...]]
+                             [-m MASK [MASK ...]]
+
+options:
+  -h, --help            show this help message and exit
+  -ban, --ban           Allow ip addresses in {IP,IP6,NF}TABLES.
+  -unban, --unban       Remove permissions from {IP,IP6,NF}TABLES.
+  -a, --add             Add to the whitelist.
+  -d, --delete          Remove from the whitelist.
+  -s, --show            Read the whitelist.
+  -j, --json            JSON fromat show.
+  -save, --save         Save show info.
+  -o OUTPUT, --output OUTPUT
+                        Output whitelist file.
+  -empty, --empty       Clear the whitelist. Use carefully!
+
+Addressing:
+  IP address management.
+
+  -ip IP [IP ...], --ip IP [IP ...]
+                        IP addresses.
+  -m MASK [MASK ...], --mask MASK [MASK ...]
+                        Network Masks.
+```
+
+Both **black** and **white** menus support multiple IP address entry. The address mask is specified using a backslash - **/**. For example: 192.168.0.2/32. At the same time, you can specify both ipv4 and ipv6 in the same command. As described above, the protocol will be automatically corrected in the process of working with the address.
+
+For example - add 2 addresses with different protocol to the blacklist:
+
+```bash
+
+./py-blacklist.py black -ip 192.168.0.2 2001:db8:abf2:29ea:5298:ad71:2ca0:4ff1 -a -save
+```
+
+or so:
+
+```bash
+
+./py-blacklist.py black -ip 192.168.0.2/32 2001:db8:abf2:29ea:5298:ad71:2ca0:4ff1/128 -a -save
+```
+
+Please note that if you do not specify a mask, it will be applied automatically. By default, the automatic mask is set to the maximum according to the address protocol - **IPV4** or **IPV6**.
+
+Or the mask can be specified with a separate key. <u>BUT, in this case, the number of masks should be equal to the number of ip addresses entered!</u>
+
+```bash
+
+./py-blacklist.py black -ip 192.168.0.2 2001:db8:abf2:29ea:5298:ad71:2ca0:4ff1 -m 32 128 -a -save
+```
 
 ---
 
