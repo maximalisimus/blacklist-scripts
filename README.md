@@ -1,9 +1,13 @@
 # blacklist-scripts
 
+---
+
 * [Russian Text](#Russian)
 * [English Text](#English)
 
-<a name="Russian">Русский текст.</a>
+---
+
+# <a name="Russian">Russian README.</a>
 
 Черный и белый списки Fail2Ban.
 
@@ -257,7 +261,7 @@ options:
 
 ---
 
-<a name="English">English text.</a>
+# <a name="English">English README.</a>
 
 Fail2Ban black and white lists.
 
