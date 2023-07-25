@@ -921,8 +921,8 @@ def servicework(args: Arguments):
 		data_black = show_json(args.blacklist_json, args.count)
 		for elem in range(len(data_white)):
 			args.current_ip = f"{data_white[elem]}"
-			on_vers = ip_to_version(args.current_ip, args.maxmask)
-			if on_vers == 6 and not args.ipv6:
+			args.current_version = ip_to_version(args.current_ip, args.maxmask)
+			if args.current_version == 6 and not args.ipv6:
 				args4_to_args6(args)
 			if not args.nftables:
 				ban_unban_one(args)
@@ -934,8 +934,8 @@ def servicework(args: Arguments):
 		args.onlist = 'black'
 		for elem in range(len(data_black)):
 			args.current_ip = f"{data_black[elem]}"
-			on_vers = ip_to_version(args.current_ip, args.maxmask)
-			if on_vers == 6 and not args.ipv6:
+			args.current_version = ip_to_version(args.current_ip, args.maxmask)
+			if args.current_version == 6 and not args.ipv6:
 				args4_to_args6(args)
 			if not args.nftables:
 				ban_unban_one(args)
@@ -1311,24 +1311,6 @@ def ban_unban_one(args: Arguments):
 			print(f"* {mess} {args.current_ip}")
 		else:
 			print(f"{err}{_commands}")
-		if ishostname:
-			args.oldip = args.current_ip
-			args.current_ip = hostname
-			service_info, err = shell_run(args.console, switch_iptables(args, comm))
-			args.current_ip = args.oldip
-			args.oldip = None
-			if args.nolog:
-				if service_info != '':
-					args.log_txt.append(f"{service_info}")
-				if err != '':
-					_commands = switch_iptables(args, comm)
-					args.log_txt.append(f"{err}{_commands}")
-				else:
-					args.log_txt.append(f"* {mess} {args.current_ip} = {hostname}")
-			if err == '':
-				print(f"* {mess} {args.current_ip} = {hostname}")
-			else:
-				print(f"{err}{_commands}")
 	
 	def quastion_hostname_nomask(not_found: str):
 		''' The issue of processing a domain name 
@@ -1393,7 +1375,7 @@ def listwork(args: Arguments):
 			args4_to_args6(args)
 			args.ip6tables_info, err6 = shell_run(args.console, switch_iptables(args, 'read'))
 			_commands6 = switch_iptables(args, 'read')
-			args6_to_args4(args)	
+			args6_to_args4(args)
 		else:
 			args.iptables_info, err = shell_run(args.console, switch_nftables(args, 'search'))
 			_commands = switch_nftables(args, 'search').replace('\t','\\t')
@@ -1410,8 +1392,8 @@ def listwork(args: Arguments):
 			args.log_txt.append(f"----- ERROR6 Info -----\n{err6}{_commands6}\n----- ERROR6 Info -----")
 		for elem in range(len(args.ip)):
 			args.current_ip = ip_to_net(args.ip[elem], args.mask[elem]) if len(args.mask) > elem else ip_to_net(args.ip[elem], args.maxmask)
-			on_vers = ip_to_version(args.current_ip, args.maxmask)
-			if on_vers == 6 and not args.ipv6:
+			args.current_version = ip_to_version(args.current_ip, args.maxmask)
+			if args.current_version == 6 and not args.ipv6:
 				args4_to_args6(args)
 				args.current_ip = ip_to_net(args.ip[elem], args.mask[elem]) if len(args.mask) > elem else ip_to_net(args.ip[elem], args.maxmask)
 			if not args.nftables:
@@ -1477,27 +1459,12 @@ def listwork(args: Arguments):
 					print(switch_iptables(args, 'add-black'))
 				else:
 					print(switch_iptables(args, 'add-white'))
-				args4_to_args6(args)
-				print(switch_iptables(args, 'read'))
-				if args.onlist == 'black':
-					print(switch_iptables(args, 'add-black'))
-				else:
-					print(switch_iptables(args, 'add-white'))
-				args6_to_args4(args)
 			else:
 				print(switch_nftables(args, 'read'))
 				if args.onlist == 'black':
 					print(switch_nftables(args, 'add-black', 'NUM'))
 				else:
 					print(switch_nftables(args, 'add-white', 'NUM'))
-				if not args.ipv6 and args.nftproto != 'inet':
-					args4_to_args6(args)
-					print(switch_nftables(args, 'read'))
-					if args.onlist == 'black':
-						print(switch_nftables(args, 'add-black', 'NUM'))
-					else:
-						print(switch_nftables(args, 'add-white', 'NUM'))
-					args6_to_args4(args)
 			sys.exit(0)
 		print('Ban the blacklist or ignore the whitelist ip addresses ...')
 		if args.nolog:
@@ -1516,27 +1483,12 @@ def listwork(args: Arguments):
 					print(switch_iptables(args, 'del-black'))
 				else:
 					print(switch_iptables(args, 'del-white'))
-				args4_to_args6(args)
-				print(switch_iptables(args, 'read'))
-				if args.onlist == 'black':
-					print(switch_iptables(args, 'del-black'))
-				else:
-					print(switch_iptables(args, 'del-white'))
-				args6_to_args4(args)
 			else:
 				print(switch_nftables(args, 'search').replace('\t','\\t'))
 				if args.onlist == 'black':
 					print(switch_nftables(args, 'del-black', 'NUM'))
 				else:
 					print(switch_nftables(args, 'del-white', 'NUM'))
-				if not args.ipv6 and args.nftproto != 'inet':
-					args4_to_args6(args)
-					print(switch_nftables(args, 'search').replace('\t','\\t'))
-					if args.onlist == 'black':
-						print(switch_nftables(args, 'del-black', 'NUM'))
-					else:
-						print(switch_nftables(args, 'del-white', 'NUM'))
-					args6_to_args4(args)
 			sys.exit(0)
 		print('Unban the blacklist or delete ignored the whitelist ip addresses ...')
 		if args.nolog:
