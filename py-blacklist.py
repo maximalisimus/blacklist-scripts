@@ -1426,7 +1426,13 @@ def listwork(args: Arguments):
 		args.json_data = args.blacklist_json if args.onlist == 'black' else args.whitelist_json
 		for elem in range(len(args.ip)):
 			args.current_ip = ip_to_net(args.ip[elem], args.mask[elem]) if len(args.mask) > elem else ip_to_net(args.ip[elem], args.maxmask)
+			args.current_version = ip_to_version(args.current_ip, args.maxmask)
+			if args.current_version == 6:
+				args4_to_args6(args)
+				args.current_ip = ip_to_net(args.ip[elem], args.mask[elem]) if len(args.mask) > elem else ip_to_net(args.ip[elem], args.maxmask)
 			add_del_one(args)
+			if args.ischange:
+				args6_to_args4(args)
 		if args.save:
 			read_write_json(args.output, 'w', args.json_data)
 		args.current_ip = None
@@ -1669,14 +1675,6 @@ def EditTableParam(args: Arguments):
 			args.nftproto = 'ip' if not args.ipv6 else 'ip6'
 	
 	minmaxmask(args)
-	
-	if args.mask != None:
-		if len(args.mask) > 1:
-			for elem in range(len(args.mask)):
-				if args.mask[elem] < args.minmask:
-					args.mask[elem] = args.minmask
-				elif args.mask[elem] > args.maxmask:
-					args.mask[elem] = args.maxmask
 	
 	if args.fine:
 		args.clearchain = True
