@@ -7,7 +7,7 @@
 
 ---
 
-# <a name="Russian">Russian README.</a>
+## <a name="Russian">Russian README.</a>
 
 Черный и белый списки Fail2Ban.
 
@@ -395,7 +395,7 @@ Addressing:
 
 ---
 
-# <a name="English">English README.</a>
+## <a name="English">English README.</a>
 
 Fail2Ban black and white lists.
 
