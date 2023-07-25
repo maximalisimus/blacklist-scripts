@@ -162,7 +162,7 @@ def createParser():
 	parser_service.add_argument ('-stop', '--stop', action='store_true', default=False, help='Stopping the blacklist.')
 	parser_service.add_argument ('-nostop', '--nostop', action='store_true', default=False, help='Stopping the blacklist without clearing {IP,IP6,NF}TABLES.')
 	parser_service.add_argument ('-reload', '--reload', action='store_true', default=False, help='Restarting the blacklist.')
-	parser_service.add_argument ('-show', '--show', action='store_true', default=False, help='Show the service blacklist and iptables.')
+	parser_service.add_argument ('-show', '--show', action='store_true', default=False, help='Show the status of NETFILTER tables.')
 	parser_service.add_argument ('-link', '--link', action='store_true', default=False, help='Symlink to program on «/usr/bin/».')
 	parser_service.add_argument ('-unlink', '--unlink', action='store_true', default=False, help='Unlink to program on «/usr/bin/».')
 	parser_service.add_argument("-name", '--name', dest="name", metavar='NAME', type=str, default='blacklist', help='The name of the symlink for the location in the programs directory is «/usr/bin/». (Default "blacklist").')
@@ -1057,12 +1057,16 @@ def servicework(args: Arguments):
 			args.log_txt.append('Start the blacklist ...')
 		service_start_stop(args)
 		print('Exit the blacklist ...')
-		if err != '' or err6 != '':
-			print(f"----- ERROR Info -----\n{err}{_commands}{err6}{_commands6}\n----- ERROR Info -----")
+		if err != '':
+			print(f"----- ERROR Info -----\n{err}{_commands}\n----- ERROR Info -----")
+		if err6 != '':
+			print(f"----- ERROR6 Info -----\n{err6}{_commands6}\n----- ERROR6 Info -----")
 		if args.nolog:
 			args.log_txt.append(f"Exit the blacklist ...")
-			if err != '' or err6 != '':
-				args.log_txt.append(f"----- ERROR Info -----\n{err}{_commands}{err6}{_commands6}\n----- ERROR Info -----")
+			if err != '':
+				args.log_txt.append(f"----- ERROR Info -----\n{err}{_commands}\n----- ERROR Info -----")
+			if err6 != '':
+				args.log_txt.append(f"----- ERROR6 Info -----\n{err6}{_commands6}\n----- ERROR6 Info -----")
 		AppExit(args)
 	if args.stop:
 		if args.cmd:
@@ -1113,12 +1117,16 @@ def servicework(args: Arguments):
 			args.log_txt.append('Stopping the blacklist ...')
 		service_start_stop(args)
 		print('Exit the blacklist ...')
-		if err != '' or err6 != '':
-			print(f"----- ERROR Info -----\n{err}{_commands}{err6}{_commands6}\n----- ERROR Info -----")
+		if err != '':
+			print(f"----- ERROR Info -----\n{err}{_commands}\n----- ERROR Info -----")
+		if err6 != '':
+			print(f"----- ERROR6 Info -----\n{err6}{_commands6}\n----- ERROR6 Info -----")
 		if args.nolog:
 			args.log_txt.append(f"Exit the blacklist ...")
-			if err != '' or err6 != '':
-				args.log_txt.append(f"----- ERROR Info -----\n{err}{_commands}{err6}{_commands6}\n----- ERROR Info -----")
+			if err != '':
+				args.log_txt.append(f"----- ERROR Info -----\n{err}{_commands}\n----- ERROR Info -----")
+			if err6 != '':
+				args.log_txt.append(f"----- ERROR6 Info -----\n{err6}{_commands6}\n----- ERROR6 Info -----")
 		AppExit(args)
 	if args.nostop:
 		print('No stopped the blacklist.')
@@ -1185,10 +1193,16 @@ def servicework(args: Arguments):
 				args6_to_args4(args)
 			else:
 				args.ip6tables_info, err6, _commands6 = args.iptables_info, err, _commands
+		if err != '':
+			print(f"----- ERROR Info -----\n{err}{_commands}\n----- ERROR Info -----")
+		if err6 != '':
+			print(f"----- ERROR6 Info -----\n{err6}{_commands6}\n----- ERROR6 Info -----")
 		if args.nolog:
 			args.log_txt.append('Reload the blacklist ...')
-			if err != '' or err6 != '':
-				args.log_txt.append(f"----- ERROR Info -----\n{err}{_commands}{err6}{_commands6}\n----- ERROR Info -----")
+			if err != '':
+				args.log_txt.append(f"----- ERROR Info -----\n{err}{_commands}\n----- ERROR Info -----")
+			if err6 != '':
+				args.log_txt.append(f"----- ERROR6 Info -----\n{err6}{_commands6}\n----- ERROR6 Info -----")		
 		args.add = False
 		service_start_stop(args)
 		args.add = True
@@ -1211,9 +1225,15 @@ def servicework(args: Arguments):
 				args.ip6tables_info, err6, _commands6 = args.iptables_info, err, _commands
 		service_start_stop(args)
 		print('Exit the blacklist ...')
+		if err != '':
+			print(f"----- ERROR Info -----\n{err}{_commands}\n----- ERROR Info -----")
+		if err6 != '':
+			print(f"----- ERROR6 Info -----\n{err6}{_commands6}\n----- ERROR6 Info -----")
 		if args.nolog:
-			if err != '' or err6 != '':
-				args.log_txt.append(f"----- ERROR Info -----\n{err}{_commands}{err6}{_commands6}\n----- ERROR Info -----")
+			if err != '':
+				args.log_txt.append(f"----- ERROR Info -----\n{err}{_commands}\n----- ERROR Info -----")
+			if err6 != '':
+				args.log_txt.append(f"----- ERROR6 Info -----\n{err6}{_commands6}\n----- ERROR6 Info -----")
 			args.log_txt.append(f"Exit the blacklist ...")
 		AppExit(args)
 	if not args.cmd:
@@ -1384,8 +1404,10 @@ def listwork(args: Arguments):
 				args6_to_args4(args)
 			else:
 				args.ip6tables_info, err6, _commands6 = args.iptables_info, err, _commands	
-		if err != '' or err6 != '':
-			args.log_txt.append(f"----- ERROR Info -----\n{err}{_commands}{err6}{_commands6}\n----- ERROR Info -----")
+		if err != '':
+			args.log_txt.append(f"----- ERROR Info -----\n{err}{_commands}\n----- ERROR Info -----")
+		if err6 != '':
+			args.log_txt.append(f"----- ERROR6 Info -----\n{err6}{_commands6}\n----- ERROR6 Info -----")
 		for elem in range(len(args.ip)):
 			args.current_ip = ip_to_net(args.ip[elem], args.mask[elem]) if len(args.mask) > elem else ip_to_net(args.ip[elem], args.maxmask)
 			on_vers = ip_to_version(args.current_ip, args.maxmask)
@@ -1537,14 +1559,15 @@ def listwork(args: Arguments):
 		read_list(args)
 		add_dell_full(args)
 	if not args.cmd:
-		print('Exit the blacklist ...')
 		if args.nolog:
 			rez = args.show + args.ban + args.unban + args.add + args.delete
 			if rez == 0:
 				if args.onlist == 'black':
 					parser.parse_args(['black', '-h'])
-				if args.onlist == 'white':
+				elif args.onlist == 'white':
 					parser.parse_args(['white', '-h'])
+				else:
+					print('Exit the blacklist ...')
 				sys.exit(0)
 			args.log_txt.append(f"Exit the blacklist ...")
 	AppExit(args)
