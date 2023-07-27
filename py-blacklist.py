@@ -11,17 +11,19 @@ maximalis171091@yandex.ru
 
 __author__ = 'Mikhail Artamonov'
 __progname__ = 'py-blacklist.py'
-__copyright__ = f"© The «{__progname__}». Copyright  by 2023."
+__copyright__ = f"© The \"{__progname__}\". Copyright  by 2023."
 __credits__ = ["Mikhail Artamonov"]
 __license__ = "GPL3"
-__version__ = "1.0.1"
+__version__ = "1.0.2"
 __maintainer__ = "Mikhail Artamonov"
 __email__ = "maximalis171091@yandex.ru"
 __status__ = "Production"
 __date__ = '09.07.2023'
+__modifed__ = '27.07.2023'
 __contact__ = 'VK: https://vk.com/shadow_imperator'
 
-infromation = f"Author: {__author__}\nProgname: {__progname__}\nVersion: {__version__}\nDate: {__date__}\n" + \
+infromation = f"Author: {__author__}\nProgname: {__progname__}\nVersion: {__version__}\n" + \
+			f"Date of creation: {__date__}\nLast modified date: {__modifed__}\n" + \
 			f"License: {__license__}\nCopyright: {__copyright__}\nCredits: {__credits__}\n" + \
 			f"Maintainer: {__maintainer__}\nStatus: {__status__}\n" + \
 			f"E-Mail: {__email__}\nContacts: {__contact__}"
@@ -236,7 +238,7 @@ def createParser():
 	group4.add_argument ('-viewlog', '--viewlog', action='store_true', default=False, help='View the log file.')
 	group4.add_argument ('-resetlog', '--resetlog', action='store_true', default=False, help='Reset the log file.')
 	
-	return parser, subparsers, parser_service, parser_systemd, parser_blist, parser_wlist, pgroup1, pgroup2, group1, group2, group3, group4
+	return [parser, subparsers, parser_service, parser_systemd, parser_blist, parser_wlist, pgroup1, pgroup2, group1, group2, group3, group4]
 
 def show_commands_fine(args: Arguments):
 	''' View commands to delete tables and/or chains 
@@ -907,7 +909,7 @@ def systemdwork(args: Arguments):
 		print(f"\nSystemd file «{systemd_service_file.name}» and «{systemd_timer_file.name}» not found!")
 		print(f"Please enter «-create» to create system files before accessing Systemd functions!\n")
 	if not args.log_txt:
-		parser.parse_args(['systemd', '-h'])
+		parser[0].parse_args(['systemd', '-h'])
 		sys.exit(0)
 
 def servicework(args: Arguments):
@@ -1238,7 +1240,7 @@ def servicework(args: Arguments):
 		AppExit(args)
 	if not args.cmd:
 		if not args.log_txt:
-			parser.parse_args(['service', '-h'])
+			parser[0].parse_args(['service', '-h'])
 			sys.exit(0)
 
 def nft_ban_unban_one(args: Arguments):
@@ -1521,9 +1523,9 @@ def listwork(args: Arguments):
 			rez = args.show + args.ban + args.unban + args.add + args.delete
 			if rez == 0:
 				if args.onlist == 'black':
-					parser.parse_args(['black', '-h'])
+					parser[0].parse_args(['black', '-h'])
 				elif args.onlist == 'white':
-					parser.parse_args(['white', '-h'])
+					parser[0].parse_args(['white', '-h'])
 				else:
 					print('Exit the blacklist ...')
 				sys.exit(0)
@@ -1777,9 +1779,9 @@ def main():
 	
 	global infromation, service_text, parser
 	
-	parser, sb1, psvc, psd, pbl, pwl, pgr1, pgr2, gr1, gr2, gr3, gr4 = createParser()
+	parser = createParser()
 	args = Arguments()
-	parser.parse_args(namespace=Arguments)
+	parser[0].parse_args(namespace=Arguments)
 	
 	if args.nolog:
 		args.log_txt = []
@@ -1803,7 +1805,7 @@ def main():
 	else:
 		if args.exit:
 			AppExit(args)
-		parser.parse_args(['-h'])
+		parser[0].parse_args(['-h'])
 
 if __name__ == '__main__':
 	main()
