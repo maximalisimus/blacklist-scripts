@@ -1,0 +1,14 @@
+-----
+27.07.2023 - 08:02 GMT +3
+py-blacklist 1.0.2:
+* Optimization of ways to get command-line arguments.
+* Added the date of creation and date of modification of the program.
+-----
+26.07.2023 - 08:59 GMT +3
+py-blacklist 1.0.1:
+* Optimization of event log output.
+-----
+25.07.2023 - 11:52 GMT +3
+py-blacklist 1.0.0:
+Basic stable version.
+-----
