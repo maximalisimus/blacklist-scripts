@@ -1,4 +1,8 @@
 -----
+29.07.2023 - 08:10 GMT +3
+py-blacklist 1.1.0:
+* The output of information about ip-addresses added to "nf_tables" has been replaced with a more accurate one.
+-----
 27.07.2023 - 08:02 GMT +3
 py-blacklist 1.0.2:
 * Optimization of ways to get command-line arguments.

@@ -14,12 +14,12 @@ __progname__ = 'py-blacklist.py'
 __copyright__ = f"© The \"{__progname__}\". Copyright  by 2023."
 __credits__ = ["Mikhail Artamonov"]
 __license__ = "GPL3"
-__version__ = "1.0.2"
+__version__ = "1.1.0"
 __maintainer__ = "Mikhail Artamonov"
 __email__ = "maximalis171091@yandex.ru"
 __status__ = "Production"
 __date__ = '09.07.2023'
-__modifed__ = '27.07.2023'
+__modifed__ = '29.07.2023'
 __contact__ = 'VK: https://vk.com/shadow_imperator'
 
 infromation = f"Author: {__author__}\nProgname: {__progname__}\nVersion: {__version__}\n" + \
@@ -568,7 +568,7 @@ def switch_nftables(args: Arguments, case = None, handle = None):
 			'del-white': f"sudo nft delete rule {args.nftproto} {args.table} {args.chain} handle {handle}",
 			'add-black': f"sudo nft 'add rule {args.nftproto} {args.table} {args.chain} {args.protocol} saddr {args.current_ip} counter drop'",
 			'del-black': f"sudo nft delete rule {args.nftproto} {args.table} {args.chain} handle {handle}",
-			'read': f"sudo nft list table {args.nftproto} {args.table}",
+			'read': f"sudo nft list chain {args.nftproto} {args.table} {args.chain}",
 			'search': f"sudo nft --handle --numeric list chain {args.nftproto} {args.table} {args.chain} | grep -Ei 'ip saddr|# handle'" + \
 			''' | sed 's/^[ \t]*//' | awk '!/^$/{print $0}' ''',
 			'create-chain': f"nft add chain {args.nftproto} {args.table} {args.chain}" + ''' '{ type filter hook input priority 0; policy accept; }\'''',
