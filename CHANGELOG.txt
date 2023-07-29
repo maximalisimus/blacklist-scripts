@@ -1,6 +1,6 @@
 -----
 29.07.2023 - 09:20 GMT +3
-py-blacklist 1.1.0:
+py-blacklist 2.0.0:
 * Added functionality for viewing not only some chains of specified NFTABLES tables, but also the tables themselves completely.
 -----
 29.07.2023 - 08:10 GMT +3
