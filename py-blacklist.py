@@ -1420,9 +1420,9 @@ def listwork(args: Arguments):
 		read_list(args)
 		clear_list(args)
 		args.file_data = args.blacklist if args.onlist == 'black' else args.whitelist
-		print(f"Clear the {args.onlist}list file {args.file_data.name} and {'save' if args.save else 'no save'} ...")
+		print(f"Clear the {args.onlist} list file {args.file_data.name} and {'save' if args.save else 'no save'} ...")
 		if args.nolog:
-			logger.info(f"Clear the {args.onlist}list file {args.file_data.name} and {'save' if args.save else 'no save'}.")
+			logger.info(f"Clear the {args.onlist} list file {args.file_data.name} and {'save' if args.save else 'no save'}.")
 		AppExit(args)
 	if args.ban:
 		if args.cmd:
