@@ -1,4 +1,8 @@
 -----
+30.07.2023 - 20:10 GMT +3
+py-blacklist 2.0.1:
+* Changes to the contents of the event log: reducing the volume of text and bringing it to the standard form of event logs.
+-----
 29.07.2023 - 09:20 GMT +3
 py-blacklist 2.0.0:
 * Added functionality for viewing not only some chains of specified NFTABLES tables, but also the tables themselves completely.
