@@ -295,7 +295,7 @@ options:
 
 Ключ **-grep** используется для фильтрации того, что должно быть выведено на экран при просмотре правил межсетевого экрана с помощью ключа **-show**. При этом даже не важно используется ли ключ предыдущего меню **-nft** или не используется.
 
-Например, я не хочу смотреть на всю таблицу **IPTABLES** или **NFTABLES**, а хочу отфильтровать, т.е. уменьшить её до определённых строк, подобно утилите **GREP**. Пусть эти строки содержат адреса с цифрами, например, 193 и 185. При этом я не то, чтобы не хочу использовать конвеер, а допустим, я не знаю как пользоваться конвееров в **Linux**-ах.
+Например, я не хочу смотреть на всю таблицу **IPTABLES** или **NFTABLES**, а хочу отфильтровать, т.е. уменьшить её до определённых строк, подобно утилите **GREP**. Пусть эти строки содержат адреса с цифрами, например, 193 и 185. При этом я не то, что не хочу использовать конвеер, а допустим, я новичок и не знаю как пользоваться конвеером в **Linux** дистрибутивах и пока ещё не знаю ни одну утилиту фильтрации вывода.
 
 ```bash
 # Для iptables
@@ -762,7 +762,7 @@ The program can be run multiple times. Unlike manual control using commands via 
 
 The **-grep** key is used to filter what should be displayed when viewing firewall rules using the **-show** key. At the same time, it does not even matter whether the key of the previous menu **-nft** is used or not.
 
-For example, I don't want to look at the entire table **IPTABLES** or **NFTABLES**, but I want to filter, i.e. reduce it to certain rows, like the utility **GREP**. Let these lines contain addresses with numbers, for example, 193 and 185. At the same time, it's not that I don't want to use a pipeline, but let's say I don't know how to use pipelines in **Linux**-ah.
+For example, I don't want to look at the entire table **IPTABLES** or **NFTABLES**, but I want to filter, i.e. reduce it to certain rows, like the utility **GREP**. Let these lines contain addresses with numbers, for example, 193 and 185. At the same time, it's not that I don't want to use a conveyor, but let's say I'm a beginner and I don't know how to use a conveyor in **Linux** distributions and I don't know any output filtering utility yet.
 
 ```bash
 # For iptables
