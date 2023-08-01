@@ -709,13 +709,13 @@ For example, I don't want to look at the entire table **IPTABLES** or **NFTABLES
 # For iptables
 $ ./py-blacklist.py service -show -grep "193|185"
 
-# For nftables
+# Для nftables
 $ ./py-blacklist.py -nft service -show -grep "193|185"
 
-# And this is what it would look like for iptables with a conveyor.
+# А вот так бы выглядело для iptables с конвеером
 $ ./py-blacklist.py service -show | grep -Ei "193|185"
 
-# Accordingly, with the conveyor for nftables.
+# Соответственно с конвеером для nftables
 $ ./py-blacklist.py -nft service -show | grep -Ei "193|185"
 ```
 

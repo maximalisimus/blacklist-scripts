@@ -14,12 +14,12 @@ __progname__ = 'py-blacklist.py'
 __copyright__ = f"© The \"{__progname__}\". Copyright  by 2023."
 __credits__ = ["Mikhail Artamonov"]
 __license__ = "GPL3"
-__version__ = "2.0.1"
+__version__ = "2.1.0"
 __maintainer__ = "Mikhail Artamonov"
 __email__ = "maximalis171091@yandex.ru"
 __status__ = "Production"
 __date__ = '09.07.2023'
-__modifed__ = '30.07.2023'
+__modifed__ = '01.08.2023'
 __contact__ = 'VK: https://vk.com/shadow_imperator'
 
 infromation = f"Author: {__author__}\nProgname: {__progname__}\nVersion: {__version__}\n" + \
@@ -166,11 +166,12 @@ def createParser():
 	parser_service.add_argument ('-stop', '--stop', action='store_true', default=False, help='Stopping the blacklist.')
 	parser_service.add_argument ('-nostop', '--nostop', action='store_true', default=False, help='Stopping the blacklist without clearing {IP,IP6,NF}TABLES.')
 	parser_service.add_argument ('-reload', '--reload', action='store_true', default=False, help='Restarting the blacklist.')
-	parser_service.add_argument ('-show', '--show', action='store_true', default=False, help='Show the status of NETFILTER tables in a given chain.')
+	parser_service.add_argument ('-show', '--show', action='store_true', default=False, help='List the rules in Netfilter.')
 	parser_service.add_argument ('-parent', '--parent', action='store_true', default=False, help='Viewing the parent. Only for NFTABLES.')
 	parser_service.add_argument ('-link', '--link', action='store_true', default=False, help='Symlink to program on «/usr/bin/».')
 	parser_service.add_argument ('-unlink', '--unlink', action='store_true', default=False, help='Unlink to program on «/usr/bin/».')
 	parser_service.add_argument("-name", '--name', dest="name", metavar='NAME', type=str, default='blacklist', help='The name of the symlink for the location in the programs directory is «/usr/bin/». (Default "blacklist").')
+	parser_service.add_argument("-grep", '--grep', dest="grep", metavar='GREP', type=str, default='', help='Filtering Netfilter output according to the specified regular expression.')
 	parser_service.set_defaults(onlist='service')
 	
 	parser_blist = subparsers.add_parser('black', help='Managing blacklists.')
@@ -180,13 +181,14 @@ def createParser():
 	parser_blist.add_argument ('-d', '--delete', action='store_true', default=False, help='Remove from the blacklist.')
 	parser_blist.add_argument ('-s', '--show', action='store_true', default=False, help='Read the blacklist.')
 	parser_blist.add_argument ('-j', '--json', action='store_true', default=False, help='JSON fromat show.')
+	parser_blist.add_argument("-indent", '--indent', metavar='INDENT', type=int, default=2, help='JSON indent (Default: 2).')
 	parser_blist.add_argument ('-save', '--save', action='store_true', default=False, help='Save show info.')
 	parser_blist.add_argument("-o", '--output', dest="output", metavar='OUTPUT', type=str, default=f"{json_black}", help='Output blacklist file.')
 	parser_blist.add_argument ('-empty', '--empty', action='store_true', default=False, help='Clear the blacklist. Use carefully!')
 	parser_blist.set_defaults(onlist='black')
 	
 	pgroup1 = parser_blist.add_argument_group('Addressing', 'IP address management.')
-	pgroup1.add_argument("-ip", '--ip', metavar='IP', type=str, default=[''], nargs='+', help='IP addresses.')
+	pgroup1.add_argument("-ip", '--ip', metavar='IP', type=str, default=[], nargs='+', help='IP addresses.')
 	pgroup1.add_argument("-m", '--mask', dest="mask", metavar='MASK', type=int, default=[], nargs='+', help='Network Masks.')
 	
 	parser_wlist = subparsers.add_parser('white', help='Managing whitelists.')
@@ -196,13 +198,14 @@ def createParser():
 	parser_wlist.add_argument ('-d', '--delete', action='store_true', default=False, help='Remove from the whitelist.')
 	parser_wlist.add_argument ('-s', '--show', action='store_true', default=False, help='Read the whitelist.')
 	parser_wlist.add_argument ('-j', '--json', action='store_true', default=False, help='JSON fromat show.')
+	parser_wlist.add_argument("-indent", '--indent', metavar='INDENT', type=int, default=2, help='JSON indent (Default: 2).')
 	parser_wlist.add_argument ('-save', '--save', action='store_true', default=False, help='Save show info.')
 	parser_wlist.add_argument("-o", '--output', dest="output", metavar='OUTPUT', type=str, default=f"{json_white}", help='Output whitelist file.')
 	parser_wlist.add_argument ('-empty', '--empty', action='store_true', default=False, help='Clear the whitelist. Use carefully!')
 	parser_wlist.set_defaults(onlist='white')
 	
 	pgroup2 = parser_wlist.add_argument_group('Addressing', 'IP address management.')
-	pgroup2.add_argument("-ip", '--ip', metavar='IP', type=str, default=[''], nargs='+', help='IP addresses.')
+	pgroup2.add_argument("-ip", '--ip', metavar='IP', type=str, default=[], nargs='+', help='IP addresses.')
 	pgroup2.add_argument("-m", '--mask', dest="mask", metavar='MASK', type=int, default=[], nargs='+', help='Network Masks.')
 	
 	group1 = parser.add_argument_group('Parameters', 'Settings for the number of bans.')
@@ -954,11 +957,8 @@ def servicework(args: Arguments):
 				print(switch_iptables(args, 'read'))
 				sys.exit(0)
 			args.iptables_info, err = shell_run(args.console, switch_iptables(args, 'read'))
-			if args.iptables_info != '':
-				print(f"{args.iptables_info}")
 			if err != '':
 				_commands = switch_iptables(args, 'read')
-				print(f"{err}{_commands}")
 		else:
 			if args.cmd:
 				if args.parent:
@@ -970,14 +970,22 @@ def servicework(args: Arguments):
 				args.iptables_info, err = shell_run(args.console, switch_nftables(args, 'read-parent'))
 			else:
 				args.iptables_info, err = shell_run(args.console, switch_nftables(args, 'read'))
-			if args.iptables_info != '':
-				print(f"{args.iptables_info}")
 			if err != '':
 				if args.parent:
 					_commands = switch_nftables(args, 'read-parent')
 				else:
 					_commands = switch_nftables(args, 'read')
-				print(f"{err}{_commands}")
+		if args.grep != '':
+			regexp = re.compile(args.grep)
+			match = re.finditer(regexp, args.iptables_info)
+			if match:
+				re_math = [x for x in match if x != '']
+				edit_tables_info = '\n'.join(list(map(lambda x: args.iptables_info[:x.start()].split('\n')[-1] + args.iptables_info[x.start():].split('\n')[0], re_math)))
+				args.iptables_info = edit_tables_info
+		if args.iptables_info != '':
+			print(f"{args.iptables_info}")
+		if err != '':
+			print(f"{err}{_commands}")
 		sys.exit(0)
 	if args.start:
 		if args.cmd:
@@ -1323,14 +1331,37 @@ def listwork(args: Arguments):
 		''' Displaying information on the screen, 
 			according to the specified criteria. '''
 		data = ''
+		jobj = args.blacklist_json if args.onlist == 'black' else args.whitelist_json
+		dict_filter  = dict()
+		tmp_filter = dict()
+		if args.ip:
+			for elem in range(len(args.ip)):
+				for x, y in jobj.items():
+					if str(args.ip[elem]) in x:
+						dict_filter[x] = y
 		if not args.json:
-			data = '\n'.join(show_json(args.blacklist_json if args.onlist == 'black' else args.whitelist_json, args.count))
-			print(data)
+			if dict_filter:
+				data = '\n'.join(show_json(dict_filter, args.count))
+			else:
+				data = '\n'.join(show_json(jobj, args.count))
 		else:
-			data = json.dumps(args.blacklist_json if args.onlist == 'black' else args.whitelist_json, indent=2)
-			print(data)
+			if args.count == 0:
+				if dict_filter:
+					data = json.dumps(dict_filter, indent=args.indent)
+				else:
+					data = json.dumps(jobj, indent=args.indent)
+			else:
+				spcae = ' ' * args.indent
+				data = '{\n'
+				if dict_filter:
+					data += ',\n'.join(tuple(f"{spcae}\"{x}\": {y}" for x,y in dict_filter.items() if y >= args.count))
+				else:
+					data += ',\n'.join(tuple(f"{spcae}\"{x}\": {y}" for x,y in jobj.items() if y >= args.count))
+				data += '\n}'
 		if args.save:
 			read_write_text(args.output, 'w', data + '\n')
+		else:
+			print(data)
 	
 	def clear_list(args: Arguments):
 		''' Clear (reset) the list. '''

@@ -1,4 +1,10 @@
 -----
+01.08.2023 - 19:00 GMT +3
+py-blacklist 2.1.0:
+* Added a command line argument to change the indentation when JSON formatting.
+* Added a "-grep" filter for enumerating Netfilter rules, in which you can write regular expressions.
+* Added the ability to filter lists views using existing command line arguments. The filtering result can be saved to any file.
+-----
 30.07.2023 - 20:10 GMT +3
 py-blacklist 2.0.1:
 * Changes to the contents of the event log: reducing the volume of text and bringing it to the standard form of event logs.
