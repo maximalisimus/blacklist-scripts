@@ -402,6 +402,65 @@ Addressing:
 ./py-blacklist.py black -ip 192.168.0.2 2001:db8:abf2:29ea:5298:ad71:2ca0:4ff1 -m 32 128 -a -save
 ```
 
+Теперь разберем просмотр правил межсетевого экрана. Тут тоже есть нюансы.
+
+Во первых стоит обратить внимание на ключ **-c** в первом меню. Этот ключ используется для фильтрации просмотра ip-адресов в файлах списков. Для сохранения тех же значений используется ключ **-q**.
+
+В меню списков поддерживается просмотр в формате **JSON** с помощью ключа **-j**.
+
+При чтении того или иного списка с ключом **-s** и указанием хотя бы частичного ip-адреса параметрах ключа **-ip** - выходные данные просмотра будут отфильтрованы по данному частичному тексту введёного значения адреса. Либо вы можете ввести полный адрес и с маской и без неё. Результат также будет отфильтрован.
+
+Приведём несколько примеров.
+
+```bash
+# Простой просмотр списка.
+$ ./py-blacklist.py black -s
+
+# Простой просмотр списка в формате JSON.
+$ ./py-blacklist.py black -s -j
+
+# Отфильтруем все ip-адреса, которые заблокированы 3 и боолее раз
+$ ./py-blacklist.py -c 3 black -s
+
+# Отфильтруем все ip-адреса, которые заблокированы 3 и боолее раз в формате JSON
+$ ./py-blacklist.py -c 3 black -s -j
+
+```
+
+Попробуем набрать те же самые команды, но при этом найдём в списке все адреса, которые содержат в себе цифры 193 и 185.
+
+```bash
+# Простой просмотр списка.
+$ ./py-blacklist.py black -s -ip 193 185
+
+# Простой просмотр списка в формате JSON.
+$ ./py-blacklist.py black -s -j -ip 193 185
+
+# Отфильтруем все ip-адреса, которые заблокированы 3 и боолее раз
+$ ./py-blacklist.py -c 3 black -s -ip 193 185
+
+# Отфильтруем все ip-адреса, которые заблокированы 3 и боолее раз в формате JSON
+$ ./py-blacklist.py -c 3 black -s -j -ip 193 185
+
+```
+
+И при этом любой результат можно сохранить в любой файл. Например, пусть это будет **&laquo;./data.txt&raquo;**.
+
+```bash
+# Простой просмотр списка.
+$ ./py-blacklist.py black -s -ip 193 185 -o ./data.txt -save
+
+# Простой просмотр списка в формате JSON.
+$ ./py-blacklist.py black -s -j -ip 193 185 -o ./data.txt -save
+
+# Отфильтруем все ip-адреса, которые заблокированы 3 и боолее раз
+$ ./py-blacklist.py -c 3 black -s -ip 193 185 -o ./data.txt -save
+
+# Отфильтруем все ip-адреса, которые заблокированы 3 и боолее раз в формате JSON
+$ ./py-blacklist.py -c 3 black -s -j -ip 193 185 -o ./data.txt -save
+
+```
+
 ---
 
 ## <a name="about">3. Обо Мне</a>
@@ -709,13 +768,13 @@ For example, I don't want to look at the entire table **IPTABLES** or **NFTABLES
 # For iptables
 $ ./py-blacklist.py service -show -grep "193|185"
 
-# Для nftables
+# For nftables
 $ ./py-blacklist.py -nft service -show -grep "193|185"
 
-# А вот так бы выглядело для iptables с конвеером
+# And this is what it would look like for iptables with a conveyor.
 $ ./py-blacklist.py service -show | grep -Ei "193|185"
 
-# Соответственно с конвеером для nftables
+# Accordingly, with the conveyor for nftables.
 $ ./py-blacklist.py -nft service -show | grep -Ei "193|185"
 ```
 
@@ -808,6 +867,65 @@ Or the mask can be specified with a separate key. <u>BUT, in this case, the numb
 ```bash
 
 ./py-blacklist.py black -ip 192.168.0.2 2001:db8:abf2:29ea:5298:ad71:2ca0:4ff1 -m 32 128 -a -save
+```
+
+Now let's analyze the viewing of firewall rules. There are nuances here too.
+
+First of all, you should pay attention to the **-c** key in the first menu. This key is used to filter the viewing of ip addresses in the list files. To save the same values, the key **-q** is used.
+
+The list menu supports viewing in **JSON** format using the **-j** key.
+
+When reading a list with the key **-s** and specifying at least a partial ip address in the key parameters **-ip** - the viewing output data will be filtered by this partial text of the entered address value. Or you can enter the full address with and without a mask. The result will also be filtered.
+
+Here are some examples.
+
+```bash
+# Simple list view.
+$ ./py-blacklist.py black -s
+
+# Simple viewing of the list in JSON format.
+$ ./py-blacklist.py black -s -j
+
+# Filter out all ip addresses that are blocked 3 or more times.
+$ ./py-blacklist.py -c 3 black -s
+
+# Filter out all ip addresses that are blocked 3 or more times in JSON format.
+$ ./py-blacklist.py -c 3 black -s -j
+
+```
+
+Let's try to type the same commands, but at the same time we will find in the list all the addresses that contain the numbers 193 and 185.
+
+```bash
+# Simple list view.
+$ ./py-blacklist.py black -s -ip 193 185
+
+# Simple viewing of the list in JSON format.
+$ ./py-blacklist.py black -s -j -ip 193 185
+
+# Filter out all ip addresses that are blocked 3 or more times.
+$ ./py-blacklist.py -c 3 black -s -ip 193 185
+
+# Filter out all ip addresses that are blocked 3 or more times in JSON format.
+$ ./py-blacklist.py -c 3 black -s -j -ip 193 185
+
+```
+
+And at the same time, any result can be saved to any file. For example, let it be **"./data.txt&raquo;**.
+
+```bash
+# Simple list view.
+$ ./py-blacklist.py black -s -ip 193 185 -o ./data.txt -save
+
+# Simple viewing of the list in JSON format.
+$ ./py-blacklist.py black -s -j -ip 193 185 -o ./data.txt -save
+
+# Filter out all ip addresses that are blocked 3 or more times.
+$ ./py-blacklist.py -c 3 black -s -ip 193 185 -o ./data.txt -save
+
+# Filter out all ip addresses that are blocked 3 or more times in JSON format.
+$ ./py-blacklist.py -c 3 black -s -j -ip 193 185 -o ./data.txt -save
+
 ```
 
 ---
