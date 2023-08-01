@@ -470,14 +470,14 @@ def service_build(args: Arguments):
 	service_tmp_text.append(st9)	
 	service_text = '\n'.join(service_tmp_text) + '\n'
 
-def read_write_json(jfile, typerw, data = dict()):
+def read_write_json(jfile, typerw, data = dict(), indent: int = 2):
 	''' The function of reading and writing JSON objects. '''
 	with open(jfile, typerw) as fp:
 		if typerw == 'r':
 			data = json.load(fp)
 			return data
 		else:
-			json.dump(data, fp, indent=2)
+			json.dump(data, fp, indent=indent)
 
 def read_write_text(onfile, typerw, data = ""):
 	''' The function of reading and writing text files. '''
@@ -1439,7 +1439,7 @@ def listwork(args: Arguments):
 			if args.ischange:
 				args6_to_args4(args)
 		if args.save:
-			read_write_json(args.output, 'w', args.json_data)
+			read_write_json(args.output, 'w', args.json_data, args.indent)
 		args.current_ip = None
 		args.json_data = None
 	
