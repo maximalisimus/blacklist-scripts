@@ -1,4 +1,11 @@
 -----
+02.08.2023 - 19:30 GMT +3
+py-blacklist 2.1.1:
+* Added a security list. The location in the system cannot be changed. Used only when blocking and unblocking IP addresses in Netfilter. If you forget to unblock the ip address in Netfilter and delete it from any list, it will remain in the security list and the next time you launch any "service" menu, it will automatically be removed from Netfilter.
+* Fixed the algorithm for blocking and unblocking ip addresses using the utilities "nft" and "ip(6)tables".
+* Fixed code redundancy in the "servicework" function, the "service_start_stop" sub-method.
+* The order of the script methods has been changed for a more familiar and correct arrangement of them when editing.
+-----
 01.08.2023 - 19:00 GMT +3
 py-blacklist 2.1.0:
 * Added a command line argument to change the indentation when JSON formatting.

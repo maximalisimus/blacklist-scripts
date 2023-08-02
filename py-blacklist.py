@@ -14,12 +14,12 @@ __progname__ = 'py-blacklist.py'
 __copyright__ = f"© The \"{__progname__}\". Copyright  by 2023."
 __credits__ = ["Mikhail Artamonov"]
 __license__ = "GPL3"
-__version__ = "2.1.0"
+__version__ = "2.1.1"
 __maintainer__ = "Mikhail Artamonov"
 __email__ = "maximalis171091@yandex.ru"
 __status__ = "Production"
 __date__ = '09.07.2023'
-__modifed__ = '01.08.2023'
+__modifed__ = '02.08.2023'
 __contact__ = 'VK: https://vk.com/shadow_imperator'
 
 infromation = f"Author: {__author__}\nProgname: {__progname__}\nVersion: {__version__}\n" + \
@@ -46,6 +46,9 @@ blacklist_name = 'ip-blacklist.json'
 whitelist_name = 'ip-whitelist.json'
 json_black = pathlib.Path(f"{workdir}").resolve().joinpath(blacklist_name)
 json_white = pathlib.Path(f"{workdir}").resolve().joinpath(whitelist_name)
+
+blackwhite_name = 'ip-blackwhite.json'
+blackwhite_file = pathlib.Path(f"{workdir}").resolve().joinpath(blackwhite_name)
 
 script_name = pathlib.Path(sys.argv[0]).resolve().name
 script_full = f"{workdir}/{script_name}"
@@ -166,12 +169,11 @@ def createParser():
 	parser_service.add_argument ('-stop', '--stop', action='store_true', default=False, help='Stopping the blacklist.')
 	parser_service.add_argument ('-nostop', '--nostop', action='store_true', default=False, help='Stopping the blacklist without clearing {IP,IP6,NF}TABLES.')
 	parser_service.add_argument ('-reload', '--reload', action='store_true', default=False, help='Restarting the blacklist.')
-	parser_service.add_argument ('-show', '--show', action='store_true', default=False, help='List the rules in Netfilter.')
+	parser_service.add_argument ('-show', '--show', action='store_true', default=False, help='Show the status of NETFILTER tables in a given chain.')
 	parser_service.add_argument ('-parent', '--parent', action='store_true', default=False, help='Viewing the parent. Only for NFTABLES.')
 	parser_service.add_argument ('-link', '--link', action='store_true', default=False, help='Symlink to program on «/usr/bin/».')
 	parser_service.add_argument ('-unlink', '--unlink', action='store_true', default=False, help='Unlink to program on «/usr/bin/».')
 	parser_service.add_argument("-name", '--name', dest="name", metavar='NAME', type=str, default='blacklist', help='The name of the symlink for the location in the programs directory is «/usr/bin/». (Default "blacklist").')
-	parser_service.add_argument("-grep", '--grep', dest="grep", metavar='GREP', type=str, default='', help='Filtering Netfilter output according to the specified regular expression.')
 	parser_service.set_defaults(onlist='service')
 	
 	parser_blist = subparsers.add_parser('black', help='Managing blacklists.')
@@ -181,14 +183,13 @@ def createParser():
 	parser_blist.add_argument ('-d', '--delete', action='store_true', default=False, help='Remove from the blacklist.')
 	parser_blist.add_argument ('-s', '--show', action='store_true', default=False, help='Read the blacklist.')
 	parser_blist.add_argument ('-j', '--json', action='store_true', default=False, help='JSON fromat show.')
-	parser_blist.add_argument("-indent", '--indent', metavar='INDENT', type=int, default=2, help='JSON indent (Default: 2).')
 	parser_blist.add_argument ('-save', '--save', action='store_true', default=False, help='Save show info.')
 	parser_blist.add_argument("-o", '--output', dest="output", metavar='OUTPUT', type=str, default=f"{json_black}", help='Output blacklist file.')
 	parser_blist.add_argument ('-empty', '--empty', action='store_true', default=False, help='Clear the blacklist. Use carefully!')
 	parser_blist.set_defaults(onlist='black')
 	
 	pgroup1 = parser_blist.add_argument_group('Addressing', 'IP address management.')
-	pgroup1.add_argument("-ip", '--ip', metavar='IP', type=str, default=[], nargs='+', help='IP addresses.')
+	pgroup1.add_argument("-ip", '--ip', metavar='IP', type=str, default=[''], nargs='+', help='IP addresses.')
 	pgroup1.add_argument("-m", '--mask', dest="mask", metavar='MASK', type=int, default=[], nargs='+', help='Network Masks.')
 	
 	parser_wlist = subparsers.add_parser('white', help='Managing whitelists.')
@@ -198,14 +199,13 @@ def createParser():
 	parser_wlist.add_argument ('-d', '--delete', action='store_true', default=False, help='Remove from the whitelist.')
 	parser_wlist.add_argument ('-s', '--show', action='store_true', default=False, help='Read the whitelist.')
 	parser_wlist.add_argument ('-j', '--json', action='store_true', default=False, help='JSON fromat show.')
-	parser_wlist.add_argument("-indent", '--indent', metavar='INDENT', type=int, default=2, help='JSON indent (Default: 2).')
 	parser_wlist.add_argument ('-save', '--save', action='store_true', default=False, help='Save show info.')
 	parser_wlist.add_argument("-o", '--output', dest="output", metavar='OUTPUT', type=str, default=f"{json_white}", help='Output whitelist file.')
 	parser_wlist.add_argument ('-empty', '--empty', action='store_true', default=False, help='Clear the whitelist. Use carefully!')
 	parser_wlist.set_defaults(onlist='white')
 	
 	pgroup2 = parser_wlist.add_argument_group('Addressing', 'IP address management.')
-	pgroup2.add_argument("-ip", '--ip', metavar='IP', type=str, default=[], nargs='+', help='IP addresses.')
+	pgroup2.add_argument("-ip", '--ip', metavar='IP', type=str, default=[''], nargs='+', help='IP addresses.')
 	pgroup2.add_argument("-m", '--mask', dest="mask", metavar='MASK', type=int, default=[], nargs='+', help='Network Masks.')
 	
 	group1 = parser.add_argument_group('Parameters', 'Settings for the number of bans.')
@@ -245,6 +245,434 @@ def createParser():
 	group4.add_argument ('-resetlog', '--resetlog', action='store_true', default=False, help='Reset the log file.')
 	
 	return [parser, subparsers, parser_service, parser_systemd, parser_blist, parser_wlist, pgroup1, pgroup2, group1, group2, group3, group4]
+
+def read_write_json(jfile, typerw, data = dict()):
+	''' The function of reading and writing JSON objects. '''
+	with open(jfile, typerw) as fp:
+		if typerw == 'r':
+			data = json.load(fp)
+			return data
+		else:
+			json.dump(data, fp, indent=2)
+
+def read_write_text(onfile, typerw, data = ""):
+	''' The function of reading and writing text files. '''
+	with open(onfile, typerw) as fp:
+		if typerw == 'r':
+			data = fp.read()
+		else:
+			fp.write(data)
+	return data
+
+def ip_to_hostname(ip: str) -> str:
+	''' Convert an ip address to a domain name. '''
+	return socket.getfqdn(ip_no_mask(ip))
+
+def ip_to_net(in_ip, in_mask = 32):	
+	''' Convert an ip address to a network address with 
+		a subnet via a backslash. '''
+	net_ip = ip_no_mask(in_ip)
+	out_ip = net_ip + '/' + mask_no_ip(in_ip, in_mask)
+	my_host = ipaddress.ip_interface(out_ip)
+	out_ip = f"{my_host.network}"
+	return out_ip
+
+def ip_no_mask(in_ip) -> str:
+	''' Convert an ip address to an address without a network mask. '''
+	return str(in_ip).split('/', 1)[0]
+
+def mask_no_ip(in_ip, in_mask = 32) -> str:
+	''' Get an ip address mask or assign a predefined value 
+		or default value. '''
+	if '/' in str(in_ip):
+		net_mask = str(in_ip).split('/', 1)[1]
+	else:
+		net_mask = in_mask
+	return str(net_mask)
+
+def ip_to_version(in_ip, in_mask = 32):
+	''' Convert ip address to version.'''
+	net_ip = ip_no_mask(in_ip)
+	out_ip = net_ip + '/' + mask_no_ip(in_ip, in_mask)
+	my_version = ipaddress.ip_interface(out_ip)
+	out_vers = f"{my_version.version}"
+	return int(out_vers)
+
+def shell_run(shell: str, cmd: str) -> str:
+	''' Execute the command in the specified command shell. 
+		Returns the result of executing the command, if any.'''
+	proc = subprocess.Popen(shell, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True, text=True)
+	sys.stdout.flush()
+	proc.stdin.write(cmd + "\n")
+	proc.stdin.close()
+	out_data = f"{proc.stdout.read()}"
+	err_data = f"{proc.stderr.read()}"
+	# Close the 'Popen' process correctly
+	proc.terminate()
+	proc.kill()
+	return out_data, err_data
+
+def read_one_list(filelist):
+	''' Read the one json files, if they are missing, 
+		replace them with an empty dictionary. '''
+	current_file = pathlib.Path(f"{filelist}").resolve()
+	if current_file.exists():
+		json_obj = read_write_json(current_file, 'r')
+	else:
+		json_obj = dict()
+	return json_obj
+
+def read_list(args: Arguments):
+	''' Read the input json files, if they are missing, 
+		replace them with an empty dictionary. '''
+	args.blacklist_json = read_one_list(args.blacklist)
+	args.whitelist_json = read_one_list(args.whitelist)
+
+def read_blackwhite(args: Arguments):
+	''' Read the blackwhite list security. '''
+	args.blackwhite_json = read_one_list(args.blackwhite_file)
+
+def add_dell_one_blackwhite(args: Arguments):
+	''' Add or dell the blackwhite list security. '''
+	if args.add:
+		args.blackwhite_json[args.current_ip] = args.onlist
+	else:
+		if args.blackwhite_json.get(args.current_ip):
+			del args.blackwhite_json[args.current_ip]
+
+def check_blackwhite(args: Arguments):
+	''' Check the blackwhite list security. '''
+	args.blackwhite_diff = dict()
+	for k, v in args.blackwhite_json.items():
+		if v == 'white':
+			if not k in args.whitelist_json.keys():
+				args.blackwhite_diff[k] = v
+		elif v == 'black':
+			if not k in args.blacklist_json.keys():
+				args.blackwhite_diff[k] = v
+
+def unban_blackwhite(args: Arguments):
+	''' Unban the blackwhite list security. '''
+	args.bw_add = args.add
+	args.add = False
+	args.bw_list = args.onlist
+	for k, v in args.blackwhite_diff.items():
+		args.onlist = v
+		args.current_ip = f"{k}"
+		args.current_version = ip_to_version(args.current_ip, args.maxmask)
+		if args.current_version == 6 and not args.ipv6:
+			args4_to_args6(args)
+		if not args.nftables:
+			ban_unban_one(args)
+		else:
+			nft_ban_unban_one(args)
+		if args.ischange:
+			args6_to_args4(args)
+	args.current_ip = None
+	args.onlist = args.bw_list
+	args.add = args.bw_add
+	args.bw_add = None
+	args.bw_list = None
+
+def write_blackwhite(args: Arguments):
+	''' Write the blackwhite list security. '''
+	read_write_json(args.blackwhite_file, 'w', args.blackwhite_json)
+
+def show_json(jobj: dict, counter: int = 0):
+	''' Viewing a json object according to the specified criteria. '''
+	if counter == 0:
+		return tuple(f"{x}: {y}" for x, y in jobj.items())
+	else:
+		return tuple(f"{x}" for x,y in jobj.items() if y >= counter)
+
+def search_handle(text: str, in_ip):
+	count = 0
+	rez = -1
+	nomask = ip_no_mask(in_ip)
+	for elem in text.split('\n'):
+		if nomask in elem:
+			rez = count
+		count += 1
+	if rez != -1:
+		return text.split('\n')[rez].split(' ')[-1]
+	else:
+		return None
+
+def nft_ban_unban_one(args: Arguments):
+	''' NFTABLES ban or unban one ip address. '''
+	
+	global logger
+	
+	def banunban_nohost(not_found: str):
+		''' A single team is banned and disbanded. '''
+		global logger
+		nonlocal comm
+		nonlocal mess
+		nonlocal on_handle
+		nonlocal args
+		comm = switch_cmds(args.onlist).get(str(args.add), not_found)
+		mess = switch_messages(args.onlist).get(str(args.add), not_found)
+		if not args.ipv6:
+			on_handle = search_handle(args.iptables_info, args.current_ip)
+			service_info, err = shell_run(args.console, switch_nftables(args, comm, on_handle))
+		else:
+			on_handle = search_handle(args.ip6tables_info, args.current_ip)
+			service_info, err = shell_run(args.console, switch_nftables(args, comm, on_handle))
+		if service_info != '':
+			print(f"{service_info}")
+		if args.nolog:
+			if service_info != '':
+				logger.info(f"{service_info}")
+			if err != '':
+				_commands = switch_nftables(args, comm, on_handle)
+				logger.error(f"{err}{_commands}")
+			else:
+				logger.info(f"* {mess} {args.current_ip}")
+		if err == '':
+			print(f"* {mess} {args.current_ip}")
+		else:
+			print(f"{err}{_commands}")
+	
+	nomask = ip_no_mask(args.current_ip)
+	comm = ''
+	mess = ''
+	on_handle = ''
+	if args.add:
+		if not args.ipv6:
+			if not nomask in args.iptables_info:
+				banunban_nohost('add-black')
+				add_dell_one_blackwhite(args)
+		else:
+			if not nomask in args.ip6tables_info:
+				banunban_nohost('add-black')
+				add_dell_one_blackwhite(args)
+	else:
+		if not args.ipv6:
+			if nomask in args.iptables_info:
+				banunban_nohost('del-black')
+				add_dell_one_blackwhite(args)
+		else:
+			if nomask in args.ip6tables_info:
+				banunban_nohost('del-black')
+				add_dell_one_blackwhite(args)
+
+def ban_unban_one(args: Arguments):
+	''' Ban or unban one ip address. '''
+	
+	global logger
+	
+	def banunban_host_nohost(not_found: str, ishostname: bool):
+		''' A single team is banned and disbanded. '''
+		global logger
+		nonlocal hostname
+		nonlocal nomask
+		nonlocal args
+		nonlocal hostname
+		nonlocal comm
+		comm = switch_cmds(args.onlist).get(str(args.add), not_found)
+		mess = switch_messages(args.onlist).get(str(args.add), not_found)
+		service_info, err = shell_run(args.console, switch_iptables(args, comm))
+		if args.nolog:
+			if service_info != '':
+				logger.info(f"{service_info}")
+			if err != '':
+				_commands = switch_iptables(args, comm)
+				logger.error(f"{err}{_commands}")
+			else:
+				logger.info(f"* {mess} {args.current_ip}")
+		if err == '':
+			print(f"* {mess} {args.current_ip}")
+		else:
+			print(f"{err}{_commands}")
+	
+	def quastion_hostname_nomask(not_found: str):
+		''' The issue of processing a domain name 
+			during a ban or unban. '''
+		nonlocal hostname
+		nonlocal nomask
+		nonlocal args
+		nonlocal hostname
+		nonlocal comm
+		if hostname != nomask:
+			if not args.ipv6:
+				if not hostname in args.iptables_info:
+					banunban_host_nohost(not_found, True)
+					add_dell_one_blackwhite(args)
+			else:
+				if not hostname in args.ip6tables_info:
+					banunban_host_nohost(not_found, True)
+					add_dell_one_blackwhite(args)
+		else:
+			banunban_host_nohost(not_found, False)
+			add_dell_one_blackwhite(args)
+	
+	nomask = ip_no_mask(args.current_ip)
+	hostname = ip_to_hostname(nomask)
+	comm = ''
+	if not args.ipv6:
+		if args.add:
+			if not nomask in args.iptables_info:
+				quastion_hostname_nomask('add-black')
+		else:
+			if nomask in args.iptables_info:
+				quastion_hostname_nomask('del-black')
+			else:
+				if hostname != nomask:
+					if hostname in args.iptables_info:
+						banunban_host_nohost('del-black', True)
+						add_dell_one_blackwhite(args)
+	else:
+		if args.add:
+			if not nomask in args.ip6tables_info:
+				quastion_hostname_nomask('add-black')
+		else:
+			if nomask in args.ip6tables_info:
+				quastion_hostname_nomask('del-black')
+			else:
+				if hostname != nomask:
+					if hostname in args.ip6tables_info:
+						banunban_host_nohost('del-black', True)
+						add_dell_one_blackwhite(args)
+
+def args4_to_args6(args: Arguments):
+	''' Convert args ipv4 to ipv6. '''
+	if not args.ipv6:
+		args.ischange = True
+		if args.nftproto != 'inet':
+			args.nftproto = 'ip6'
+		args.ipv6 = True
+		if not args.nftables:
+			args.protocol = 'iptables' if not args.ipv6 else 'ip6tables'
+		else:
+			args.protocol = 'ip' if not args.ipv6 else 'ip6'
+		minmaxmask(args)
+
+def args6_to_args4(args: Arguments):
+	''' Convert args ipv6 to ipv4. '''
+	if args.ipv6:
+		args.ischange = False
+		if args.nftproto != 'inet':
+			args.nftproto = 'ip'
+		args.ipv6 = False
+		if not args.nftables:
+			args.protocol = 'iptables' if not args.ipv6 else 'ip6tables'
+		else:
+			args.protocol = 'ip' if not args.ipv6 else 'ip6'
+		minmaxmask(args)
+
+def minmaxmask(args: Arguments):
+	''' Edit min max mask on protocol. '''
+	if not args.ipv6:
+		args.minmask = 1
+		args.maxmask = 32
+	else:
+		args.minmask = 1
+		args.maxmask = 128
+
+def cicle_list(data_list, current_list, isadd: bool, args: Arguments):
+		''' A cycle of identical operations for different lists on 
+			blacklist or whitelist to servicework. '''
+		args.curr_list = args.onlist
+		args.onlist = current_list
+		args.isadd = args.add
+		args.add = isadd
+		for elem in range(len(data_list)):
+			args.current_ip = f"{data_list[elem]}"
+			args.current_version = ip_to_version(args.current_ip, args.maxmask)
+			if args.current_version == 6 and not args.ipv6:
+				args4_to_args6(args)
+			if not args.nftables:
+				ban_unban_one(args)
+			else:
+				nft_ban_unban_one(args)
+			if args.ischange:
+				args6_to_args4(args)
+		args.current_ip = None
+		args.onlist = args.curr_list
+		args.curr_list = None
+		args.add = args.isadd
+		args.isadd = None
+
+def switch_iptables(args: Arguments, case = None):
+	''' Selecting a command to execute in the command shell. '''
+	return {
+			'add-white': f"sudo {args.protocol} -t {args.table} -A {args.chain} -s {args.current_ip} -j ACCEPT",
+			'del-white': f"sudo {args.protocol} -t {args.table} -D {args.chain} -s {args.current_ip} -j ACCEPT",
+			'add-black': f"sudo {args.protocol} -t {args.table} -A {args.chain} -s {args.current_ip} -j DROP",
+			'del-black': f"sudo {args.protocol} -t {args.table} -D {args.chain} -s {args.current_ip} -j DROP",
+			'read': f"sudo {args.protocol} -L {args.chain}"
+	}.get(case, f"sudo {args.protocol} -L {args.chain}")
+
+def switch_nftables(args: Arguments, case = None, handle = None):
+	''' Selecting a command to execute NFTABLES in the command shell. '''
+	return {
+			'add-white': f"sudo nft 'add rule {args.nftproto} {args.table} {args.chain} {args.protocol} saddr {args.current_ip} counter accept'",
+			'del-white': f"sudo nft delete rule {args.nftproto} {args.table} {args.chain} handle {handle}",
+			'add-black': f"sudo nft 'add rule {args.nftproto} {args.table} {args.chain} {args.protocol} saddr {args.current_ip} counter drop'",
+			'del-black': f"sudo nft delete rule {args.nftproto} {args.table} {args.chain} handle {handle}",
+			'read': f"sudo nft list chain {args.nftproto} {args.table} {args.chain}",
+			'read-parent': f"sudo nft list table {args.nftproto} {args.table}",
+			'search': f"sudo nft --handle --numeric list chain {args.nftproto} {args.table} {args.chain} | grep -Ei 'ip saddr|# handle'" + \
+			''' | sed 's/^[ \t]*//' | awk '!/^$/{print $0}' ''',
+			'create-chain': f"nft add chain {args.nftproto} {args.table} {args.chain}" + ''' '{ type filter hook input priority 0; policy accept; }\'''',
+			'create-table': f"nft add table {args.nftproto} {args.table}",
+			'del-table': f"sudo nft delete table {args.nftproto} {args.table}",
+			'del-chain': f"sudo nft delete chain {args.nftproto} {args.table} {args.chain}",
+			'flush-table': f"sudo nft flush table {args.nftproto} {args.table}",
+			'flush-chain': f"sudo nft flush chain {args.nftproto} {args.table} {args.chain}"
+	}.get(case, f"sudo nft list table {args.nftproto} {args.table}")
+
+def switch_cmds(case = None):
+	''' Selecting a command for the «switch_iptables» method. '''
+	return {
+			'black': {
+					'True': 'add-black',
+					'False': 'del-black'
+					},
+			'white': {
+					'True': 'add-white',
+					'False': 'del-white'
+					},
+	}.get(case, dict())
+
+def switch_messages(case = None):
+	''' Selecting a message to display on the screen. '''
+	return {
+			'black': {
+					'True': 'Ban',
+					'False': 'Unban'
+				},
+			'white': {
+					'True': 'Ignore',
+					'False': 'Del ignore'
+				},
+	}.get(case, dict())
+
+def switch_systemd(case = None, counter = 3):
+	''' Systemd control selection. '''
+	return {
+			'status': f"sudo systemctl status blacklist@{counter}.service",
+			'start-service': f"sudo systemctl start blacklist@{counter}.service",
+			'stop-service': f"sudo systemctl stop blacklist@{counter}.service",
+			'enable': f"sudo systemctl enable blacklist@{counter}.timer",
+			'disable': f"sudo systemctl disable blacklist@{counter}.timer",
+			'start-timer': f"sudo systemctl start blacklist@{counter}.timer",
+			'stop-timer': f"sudo systemctl stop blacklist@{counter}.timer",
+			'is-timer': f"sudo systemctl is-active blacklist@{counter}.timer",
+			'is-service': f"sudo systemctl is-active blacklist@{counter}.service",
+			'is-enable-timer': f"sudo systemctl is-enabled blacklist@{counter}.timer",
+			'is-enable-service': f"sudo systemctl is-enabled blacklist@{counter}.service"
+	}.get(case, f"sudo systemctl status blacklist@{counter}.service")
+
+def AppExit(args: Arguments):
+	''' Shutting down the application. '''
+	
+	show_commands_fine(args)
+	
+	if args.onlist != 'systemd':
+		AppFine(args)
+	write_blackwhite(args)
+	sys.exit(0)
 
 def show_commands_fine(args: Arguments):
 	''' View commands to delete tables and/or chains 
@@ -405,15 +833,6 @@ def AppFine(args: Arguments):
 					#
 					args6_to_args4(args)
 
-def AppExit(args: Arguments):
-	''' Shutting down the application. '''
-	
-	show_commands_fine(args)
-	
-	if args.onlist != 'systemd':
-		AppFine(args)
-	sys.exit(0)
-
 def service_build(args: Arguments):
 	global service_text, st1, st2, st3, st4, st5, st6, st7, st8, st9
 		
@@ -469,175 +888,6 @@ def service_build(args: Arguments):
 	service_tmp_text.append(st8)
 	service_tmp_text.append(st9)	
 	service_text = '\n'.join(service_tmp_text) + '\n'
-
-def read_write_json(jfile, typerw, data = dict(), indent: int = 2):
-	''' The function of reading and writing JSON objects. '''
-	with open(jfile, typerw) as fp:
-		if typerw == 'r':
-			data = json.load(fp)
-			return data
-		else:
-			json.dump(data, fp, indent=indent)
-
-def read_write_text(onfile, typerw, data = ""):
-	''' The function of reading and writing text files. '''
-	with open(onfile, typerw) as fp:
-		if typerw == 'r':
-			data = fp.read()
-		else:
-			fp.write(data)
-	return data
-
-def ip_to_hostname(ip: str) -> str:
-	''' Convert an ip address to a domain name. '''
-	return socket.getfqdn(ip_no_mask(ip))
-
-def ip_to_net(in_ip, in_mask = 32):	
-	''' Convert an ip address to a network address with 
-		a subnet via a backslash. '''
-	net_ip = ip_no_mask(in_ip)
-	out_ip = net_ip + '/' + mask_no_ip(in_ip, in_mask)
-	my_host = ipaddress.ip_interface(out_ip)
-	out_ip = f"{my_host.network}"
-	return out_ip
-
-def ip_no_mask(in_ip) -> str:
-	''' Convert an ip address to an address without a network mask. '''
-	return str(in_ip).split('/', 1)[0]
-
-def mask_no_ip(in_ip, in_mask = 32) -> str:
-	''' Get an ip address mask or assign a predefined value 
-		or default value. '''
-	if '/' in str(in_ip):
-		net_mask = str(in_ip).split('/', 1)[1]
-	else:
-		net_mask = in_mask
-	return str(net_mask)
-
-def ip_to_version(in_ip, in_mask = 32):
-	''' Convert ip address to version.'''
-	net_ip = ip_no_mask(in_ip)
-	out_ip = net_ip + '/' + mask_no_ip(in_ip, in_mask)
-	my_version = ipaddress.ip_interface(out_ip)
-	out_vers = f"{my_version.version}"
-	return int(out_vers)
-
-def shell_run(shell: str, cmd: str) -> str:
-	''' Execute the command in the specified command shell. 
-		Returns the result of executing the command, if any.'''
-	proc = subprocess.Popen(shell, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True, text=True)
-	sys.stdout.flush()
-	proc.stdin.write(cmd + "\n")
-	proc.stdin.close()
-	out_data = f"{proc.stdout.read()}"
-	err_data = f"{proc.stderr.read()}"
-	# Close the 'Popen' process correctly
-	proc.terminate()
-	proc.kill()
-	return out_data, err_data
-
-def switch_iptables(args: Arguments, case = None):
-	''' Selecting a command to execute in the command shell. '''
-	return {
-			'add-white': f"sudo {args.protocol} -t {args.table} -A {args.chain} -s {args.current_ip} -j ACCEPT",
-			'del-white': f"sudo {args.protocol} -t {args.table} -D {args.chain} -s {args.current_ip} -j ACCEPT",
-			'add-black': f"sudo {args.protocol} -t {args.table} -A {args.chain} -s {args.current_ip} -j DROP",
-			'del-black': f"sudo {args.protocol} -t {args.table} -D {args.chain} -s {args.current_ip} -j DROP",
-			'read': f"sudo {args.protocol} -L {args.chain}"
-	}.get(case, f"sudo {args.protocol} -L {args.chain}")
-
-def switch_nftables(args: Arguments, case = None, handle = None):
-	''' Selecting a command to execute NFTABLES in the command shell. '''
-	return {
-			'add-white': f"sudo nft 'add rule {args.nftproto} {args.table} {args.chain} {args.protocol} saddr {args.current_ip} counter accept'",
-			'del-white': f"sudo nft delete rule {args.nftproto} {args.table} {args.chain} handle {handle}",
-			'add-black': f"sudo nft 'add rule {args.nftproto} {args.table} {args.chain} {args.protocol} saddr {args.current_ip} counter drop'",
-			'del-black': f"sudo nft delete rule {args.nftproto} {args.table} {args.chain} handle {handle}",
-			'read': f"sudo nft list chain {args.nftproto} {args.table} {args.chain}",
-			'read-parent': f"sudo nft list table {args.nftproto} {args.table}",
-			'search': f"sudo nft --handle --numeric list chain {args.nftproto} {args.table} {args.chain} | grep -Ei 'ip saddr|# handle'" + \
-			''' | sed 's/^[ \t]*//' | awk '!/^$/{print $0}' ''',
-			'create-chain': f"nft add chain {args.nftproto} {args.table} {args.chain}" + ''' '{ type filter hook input priority 0; policy accept; }\'''',
-			'create-table': f"nft add table {args.nftproto} {args.table}",
-			'del-table': f"sudo nft delete table {args.nftproto} {args.table}",
-			'del-chain': f"sudo nft delete chain {args.nftproto} {args.table} {args.chain}",
-			'flush-table': f"sudo nft flush table {args.nftproto} {args.table}",
-			'flush-chain': f"sudo nft flush chain {args.nftproto} {args.table} {args.chain}"
-	}.get(case, f"sudo nft list table {args.nftproto} {args.table}")
-
-def switch_cmds(case = None):
-	''' Selecting a command for the «switch_iptables» method. '''
-	return {
-			'black': {
-					'True': 'add-black',
-					'False': 'del-black'
-					},
-			'white': {
-					'True': 'add-white',
-					'False': 'del-white'
-					},
-	}.get(case, dict())
-
-def switch_messages(case = None):
-	''' Selecting a message to display on the screen. '''
-	return {
-			'black': {
-					'True': 'Ban',
-					'False': 'Unban'
-				},
-			'white': {
-					'True': 'Ignore',
-					'False': 'Del ignore'
-				},
-	}.get(case, dict())
-
-def switch_systemd(case = None, counter = 3):
-	''' Systemd control selection. '''
-	return {
-			'status': f"sudo systemctl status blacklist@{counter}.service",
-			'start-service': f"sudo systemctl start blacklist@{counter}.service",
-			'stop-service': f"sudo systemctl stop blacklist@{counter}.service",
-			'enable': f"sudo systemctl enable blacklist@{counter}.timer",
-			'disable': f"sudo systemctl disable blacklist@{counter}.timer",
-			'start-timer': f"sudo systemctl start blacklist@{counter}.timer",
-			'stop-timer': f"sudo systemctl stop blacklist@{counter}.timer",
-			'is-timer': f"sudo systemctl is-active blacklist@{counter}.timer",
-			'is-service': f"sudo systemctl is-active blacklist@{counter}.service",
-			'is-enable-timer': f"sudo systemctl is-enabled blacklist@{counter}.timer",
-			'is-enable-service': f"sudo systemctl is-enabled blacklist@{counter}.service"
-	}.get(case, f"sudo systemctl status blacklist@{counter}.service")
-	
-def read_list(args: Arguments):
-	''' Read the input json files, if they are missing, 
-		replace them with an empty dictionary. '''
-	if args.blacklist.exists():
-		args.blacklist_json = read_write_json(args.blacklist, 'r')
-	else:
-		args.blacklist_json = dict()
-	if args.whitelist.exists():
-		args.whitelist_json = read_write_json(args.whitelist, 'r')
-	else:
-		args.whitelist_json = dict()
-
-def show_json(jobj: dict, counter: int = 0):
-	''' Viewing a json object according to the specified criteria. '''
-	if counter == 0:
-		return tuple(f"{x}: {y}" for x, y in jobj.items())
-	else:
-		return tuple(f"{x}" for x,y in jobj.items() if y >= counter)
-
-def search_handle(text: str, in_ip):
-	count = 0
-	rez = -1
-	nomask = ip_no_mask(in_ip)
-	for elem in text.split('\n'):
-		if nomask in elem:
-			rez = count
-		count += 1
-	if rez != -1:
-		return text.split('\n')[rez].split(' ')[-1]
-	else:
-		return None
 
 def systemdwork(args: Arguments):
 	''' Systemd management. '''
@@ -885,33 +1135,10 @@ def servicework(args: Arguments):
 	
 	def service_start_stop(args: Arguments):
 		''' Launching or stopping the blacklist service. '''
-		args.onlist = 'white'
 		data_white = show_json(args.whitelist_json, 1)
 		data_black = show_json(args.blacklist_json, args.count)
-		for elem in range(len(data_white)):
-			args.current_ip = f"{data_white[elem]}"
-			args.current_version = ip_to_version(args.current_ip, args.maxmask)
-			if args.current_version == 6 and not args.ipv6:
-				args4_to_args6(args)
-			if not args.nftables:
-				ban_unban_one(args)
-			else:
-				nft_ban_unban_one(args)
-			if args.ischange:
-				args6_to_args4(args)
-		args.current_ip = None
-		args.onlist = 'black'
-		for elem in range(len(data_black)):
-			args.current_ip = f"{data_black[elem]}"
-			args.current_version = ip_to_version(args.current_ip, args.maxmask)
-			if args.current_version == 6 and not args.ipv6:
-				args4_to_args6(args)
-			if not args.nftables:
-				ban_unban_one(args)
-			else:
-				nft_ban_unban_one(args)
-			if args.ischange:
-				args6_to_args4(args)
+		cicle_list(data_white, 'white', args.add, args)
+		cicle_list(data_black, 'black', args.add, args)
 		args.current_ip = None
 		args.onlist = None
 		args.add = None
@@ -957,8 +1184,11 @@ def servicework(args: Arguments):
 				print(switch_iptables(args, 'read'))
 				sys.exit(0)
 			args.iptables_info, err = shell_run(args.console, switch_iptables(args, 'read'))
+			if args.iptables_info != '':
+				print(f"{args.iptables_info}")
 			if err != '':
 				_commands = switch_iptables(args, 'read')
+				print(f"{err}{_commands}")
 		else:
 			if args.cmd:
 				if args.parent:
@@ -970,22 +1200,14 @@ def servicework(args: Arguments):
 				args.iptables_info, err = shell_run(args.console, switch_nftables(args, 'read-parent'))
 			else:
 				args.iptables_info, err = shell_run(args.console, switch_nftables(args, 'read'))
+			if args.iptables_info != '':
+				print(f"{args.iptables_info}")
 			if err != '':
 				if args.parent:
 					_commands = switch_nftables(args, 'read-parent')
 				else:
 					_commands = switch_nftables(args, 'read')
-		if args.grep != '':
-			regexp = re.compile(args.grep)
-			match = re.finditer(regexp, args.iptables_info)
-			if match:
-				re_math = [x for x in match if x != '']
-				edit_tables_info = '\n'.join(list(map(lambda x: args.iptables_info[:x.start()].split('\n')[-1] + args.iptables_info[x.start():].split('\n')[0], re_math)))
-				args.iptables_info = edit_tables_info
-		if args.iptables_info != '':
-			print(f"{args.iptables_info}")
-		if err != '':
-			print(f"{err}{_commands}")
+				print(f"{err}{_commands}")
 		sys.exit(0)
 	if args.start:
 		if args.cmd:
@@ -1044,6 +1266,8 @@ def servicework(args: Arguments):
 				logger.error(f"{err}{_commands}")
 			if err6 != '':
 				logger.error(f"{err6}{_commands6}")
+		check_blackwhite(args)
+		unban_blackwhite(args)
 		AppExit(args)
 	if args.stop:
 		if args.cmd:
@@ -1102,6 +1326,8 @@ def servicework(args: Arguments):
 				logger.error(f"{err}{_commands}")
 			if err6 != '':
 				logger.error(f"{err6}{_commands6}")
+		check_blackwhite(args)
+		unban_blackwhite(args)
 		AppExit(args)
 	if args.nostop:
 		print('No stopped the blacklist.')
@@ -1208,117 +1434,13 @@ def servicework(args: Arguments):
 				logger.error(f"{err}{_commands}")
 			if err6 != '':
 				alogger.error(f"{err6}{_commands6}")
+		check_blackwhite(args)
+		unban_blackwhite(args)
 		AppExit(args)
 	if not args.cmd:
 		if not args.log_txt:
 			parser[0].parse_args(['service', '-h'])
 			sys.exit(0)
-
-def nft_ban_unban_one(args: Arguments):
-	''' NFTABLES ban or unban one ip address. '''
-	
-	global logger
-	
-	def banunban_nohost(not_found: str):
-		''' A single team is banned and disbanded. '''
-		global logger
-		nonlocal comm
-		nonlocal mess
-		nonlocal on_handle
-		nonlocal args
-		comm = switch_cmds(args.onlist).get(str(args.add), not_found)
-		mess = switch_messages(args.onlist).get(str(args.add), not_found)
-		on_handle = search_handle(args.iptables_info, args.current_ip)
-		service_info, err = shell_run(args.console, switch_nftables(args, comm, on_handle))
-		if err != '':
-			args4_to_args6(args)
-			comm = switch_cmds(args.onlist).get(str(args.add), not_found)
-			mess = switch_messages(args.onlist).get(str(args.add), not_found)
-			on_handle = search_handle(args.ip6tables_info, args.current_ip)
-			service_info, err = shell_run(args.console, switch_nftables(args, comm, on_handle))
-			args6_to_args4(args)
-		if service_info != '':
-			print(f"{service_info}")
-		if args.nolog:
-			if service_info != '':
-				logger.info(f"{service_info}")
-			if err != '':
-				_commands = switch_nftables(args, comm, on_handle)
-				logger.error(f"{err}{_commands}")
-			else:
-				logger.info(f"* {mess} {args.current_ip}")
-		if err == '':
-			print(f"* {mess} {args.current_ip}")
-		else:
-			print(f"{err}{_commands}")
-	
-	nomask = ip_no_mask(args.current_ip)
-	comm = ''
-	mess = ''
-	on_handle = ''
-	if args.add:
-		if not nomask in args.iptables_info and not nomask in args.ip6tables_info:
-			banunban_nohost('add-black')
-	else:
-		if nomask in args.iptables_info or nomask in args.ip6tables_info:
-			banunban_nohost('del-black')
-
-def ban_unban_one(args: Arguments):
-	''' Ban or unban one ip address. '''
-	
-	global logger
-	
-	def banunban_host_nohost(not_found: str, ishostname: bool):
-		''' A single team is banned and disbanded. '''
-		global logger
-		nonlocal hostname
-		nonlocal nomask
-		nonlocal args
-		nonlocal hostname
-		nonlocal comm
-		comm = switch_cmds(args.onlist).get(str(args.add), not_found)
-		mess = switch_messages(args.onlist).get(str(args.add), not_found)
-		service_info, err = shell_run(args.console, switch_iptables(args, comm))
-		if args.nolog:
-			if service_info != '':
-				logger.info(f"{service_info}")
-			if err != '':
-				_commands = switch_iptables(args, comm)
-				logger.error(f"{err}{_commands}")
-			else:
-				logger.info(f"* {mess} {args.current_ip}")
-		if err == '':
-			print(f"* {mess} {args.current_ip}")
-		else:
-			print(f"{err}{_commands}")
-	
-	def quastion_hostname_nomask(not_found: str):
-		''' The issue of processing a domain name 
-			during a ban or unban. '''
-		nonlocal hostname
-		nonlocal nomask
-		nonlocal args
-		nonlocal hostname
-		nonlocal comm
-		if hostname != nomask:
-			if not hostname in args.iptables_info and not hostname in args.ip6tables_info:
-				banunban_host_nohost(not_found, True)
-		else:
-			banunban_host_nohost(not_found, False)
-	
-	nomask = ip_no_mask(args.current_ip)
-	hostname = ip_to_hostname(nomask)
-	comm = ''
-	if args.add:
-		if not nomask in args.iptables_info and not nomask in args.ip6tables_info:
-			quastion_hostname_nomask('add-black')
-	else:
-		if nomask in args.iptables_info or nomask in args.ip6tables_info :
-			quastion_hostname_nomask('del-black')
-		else:
-			if hostname != nomask:
-				if hostname in args.iptables_info or hostname in args.ip6tables_info:
-					banunban_host_nohost('del-black', True)
 
 def listwork(args: Arguments):
 	''' Working with lists. '''
@@ -1331,37 +1453,14 @@ def listwork(args: Arguments):
 		''' Displaying information on the screen, 
 			according to the specified criteria. '''
 		data = ''
-		jobj = args.blacklist_json if args.onlist == 'black' else args.whitelist_json
-		dict_filter  = dict()
-		tmp_filter = dict()
-		if args.ip:
-			for elem in range(len(args.ip)):
-				for x, y in jobj.items():
-					if str(args.ip[elem]) in x:
-						dict_filter[x] = y
 		if not args.json:
-			if dict_filter:
-				data = '\n'.join(show_json(dict_filter, args.count))
-			else:
-				data = '\n'.join(show_json(jobj, args.count))
+			data = '\n'.join(show_json(args.blacklist_json if args.onlist == 'black' else args.whitelist_json, args.count))
+			print(data)
 		else:
-			if args.count == 0:
-				if dict_filter:
-					data = json.dumps(dict_filter, indent=args.indent)
-				else:
-					data = json.dumps(jobj, indent=args.indent)
-			else:
-				spcae = ' ' * args.indent
-				data = '{\n'
-				if dict_filter:
-					data += ',\n'.join(tuple(f"{spcae}\"{x}\": {y}" for x,y in dict_filter.items() if y >= args.count))
-				else:
-					data += ',\n'.join(tuple(f"{spcae}\"{x}\": {y}" for x,y in jobj.items() if y >= args.count))
-				data += '\n}'
+			data = json.dumps(args.blacklist_json if args.onlist == 'black' else args.whitelist_json, indent=2)
+			print(data)
 		if args.save:
 			read_write_text(args.output, 'w', data + '\n')
-		else:
-			print(data)
 	
 	def clear_list(args: Arguments):
 		''' Clear (reset) the list. '''
@@ -1425,7 +1524,7 @@ def listwork(args: Arguments):
 				args.json_data[args.current_ip] = 1 if args.quantity == 0 else args.quantity
 				if args.nolog:
 					logger.info(f"add {args.current_ip} = {args.json_data[args.current_ip]}")
-	
+		
 	def add_dell_full(args: Arguments):
 		''' Adding or deleting all entered ip addresses. '''
 		args.json_data = args.blacklist_json if args.onlist == 'black' else args.whitelist_json
@@ -1439,7 +1538,7 @@ def listwork(args: Arguments):
 			if args.ischange:
 				args6_to_args4(args)
 		if args.save:
-			read_write_json(args.output, 'w', args.json_data, args.indent)
+			read_write_json(args.output, 'w', args.json_data)
 		args.current_ip = None
 		args.json_data = None
 	
@@ -1601,41 +1700,6 @@ def CreateTableChain(args: Arguments):
 			if args.exit:
 				AppExit(args)
 
-def args4_to_args6(args: Arguments):
-	''' Convert args ipv4 to ipv6. '''
-	if not args.ipv6:
-		args.ischange = True
-		if args.nftproto != 'inet':
-			args.nftproto = 'ip6'
-		args.ipv6 = True
-		if not args.nftables:
-			args.protocol = 'iptables' if not args.ipv6 else 'ip6tables'
-		else:
-			args.protocol = 'ip' if not args.ipv6 else 'ip6'
-		minmaxmask(args)
-
-def args6_to_args4(args: Arguments):
-	''' Convert args ipv6 to ipv4. '''
-	if args.ipv6:
-		args.ischange = False
-		if args.nftproto != 'inet':
-			args.nftproto = 'ip'
-		args.ipv6 = False
-		if not args.nftables:
-			args.protocol = 'iptables' if not args.ipv6 else 'ip6tables'
-		else:
-			args.protocol = 'ip' if not args.ipv6 else 'ip6'
-		minmaxmask(args)
-
-def minmaxmask(args: Arguments):
-	''' Edit min max mask on protocol. '''
-	if not args.ipv6:
-		args.minmask = 1
-		args.maxmask = 32
-	else:
-		args.minmask = 1
-		args.maxmask = 128
-
 def EditTableParam(args: Arguments):
 	''' Edit online param on {IP,IP6,NF}TABLES. '''
 	
@@ -1669,11 +1733,11 @@ def EditTableParam(args: Arguments):
 def EditDirParam(args: Arguments):
 	''' Edit online directoryes Params. '''	
 	
-	global workdir
-	global json_black
-	global json_white
-	global blacklist_name
-	global whitelist_name
+	global workdir, json_black, json_white, blacklist_name, whitelist_name
+	global blackwhite_file
+	
+	args.blackwhite_file = blackwhite_file
+	read_blackwhite(args)
 	
 	if workdir != args.workdir:
 		workdir = args.workdir
