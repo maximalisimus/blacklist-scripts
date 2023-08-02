@@ -671,7 +671,6 @@ def AppExit(args: Arguments):
 	
 	if args.onlist != 'systemd':
 		AppFine(args)
-	write_blackwhite(args)
 	sys.exit(0)
 
 def show_commands_fine(args: Arguments):
@@ -1268,6 +1267,7 @@ def servicework(args: Arguments):
 				logger.error(f"{err6}{_commands6}")
 		check_blackwhite(args)
 		unban_blackwhite(args)
+		write_blackwhite(args)
 		AppExit(args)
 	if args.stop:
 		if args.cmd:
@@ -1328,6 +1328,7 @@ def servicework(args: Arguments):
 				logger.error(f"{err6}{_commands6}")
 		check_blackwhite(args)
 		unban_blackwhite(args)
+		write_blackwhite(args)
 		AppExit(args)
 	if args.nostop:
 		print('No stopped the blacklist.')
@@ -1436,6 +1437,7 @@ def servicework(args: Arguments):
 				alogger.error(f"{err6}{_commands6}")
 		check_blackwhite(args)
 		unban_blackwhite(args)
+		write_blackwhite(args)
 		AppExit(args)
 	if not args.cmd:
 		if not args.log_txt:
