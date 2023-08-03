@@ -57,6 +57,8 @@ sudo make DESTDIR=/ install-filter
 
 В данных предустановленных фильтрах для **Fail2ban** содержаться регулярные выражения для отдельного отслеживания всех ошибок самого *Nginx* как такового из файла **&laquo;/var/log/nginx/error.log&raquo;** или похожем, а также отслеживания статусных состояний &laquo;4xx ошибка в запросе&raquo; и &laquo;5xx ошибка сервера&raquo; из файла **&laquo;/var/log/nginx/access.log&raquo;** или похожем пользовательском.
 
+**Обратите внимание!** <u>Данные предустановленные регулярные варыжения в указанных фильтрах являются достаточно жесткими. Если вы не уверены в том, что сами не совершите ошибок во время настроек или при их использовании - откажитесь от их установки и применения!</u>
+
 Для установки действий **action**-ов для **Fail2ban**-а воспользуйтесь командой их установки:
 
 ```bash
@@ -531,6 +533,8 @@ sudo make DESTDIR=/ install-filter
 ```
 
 These preset filters for **Fail2ban** contain regular expressions for separate tracking of all errors of *Nginx itself* as such from the file **/var/log/nginx/error.log** or similar, as well as tracking the status states of "4xx error in the request" and "5xx server error" from the file **/var/log/nginx/access.log** or similar custom.
+
+****Pay attention!** <u>These preset regular expressions in the specified filters are quite rigid. If you are not sure that you yourself will not make mistakes during the settings or when using them - refuse to install and use them!</u>
 
 To install the **action**s for **Fail2ban**, use the command to install them:
 
