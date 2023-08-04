@@ -14,12 +14,12 @@ __progname__ = 'py-blacklist.py'
 __copyright__ = f"© The \"{__progname__}\". Copyright  by 2023."
 __credits__ = ["Mikhail Artamonov"]
 __license__ = "GPL3"
-__version__ = "2.1.1"
+__version__ = "2.2.0"
 __maintainer__ = "Mikhail Artamonov"
 __email__ = "maximalis171091@yandex.ru"
 __status__ = "Production"
 __date__ = '09.07.2023'
-__modifed__ = '02.08.2023'
+__modifed__ = '04.08.2023'
 __contact__ = 'VK: https://vk.com/shadow_imperator'
 
 infromation = f"Author: {__author__}\nProgname: {__progname__}\nVersion: {__version__}\n" + \
@@ -222,6 +222,7 @@ def createParser():
 	group3.add_argument ('-e', '-exit', '--exit', action='store_true', default=False, help='Finish creating the table/chain on NFTABLES.')
 	group3.add_argument ('-run', '--run', action='store_true', default=False, help='Full starting NFTABLES tables from all settings. Use carefully!')
 	group3.add_argument ('-fine', '--fine', action='store_true', default=False, help='Full clearing NFTABLES tables from all settings. Use carefully!')
+	group3.add_argument("-net", "-network", '--network', dest="network", metavar='NETWORK', type=str, default='', help='The name of the interface through which the processed packet should be received. That is, the input network interface.')
 	group3.add_argument ('-ipv6', '--ipv6', action='store_true', default=False, help='Forced IPV6 protocol selection.')
 	group3.add_argument ('-nft', '--nftables', action='store_true', default=False, help='Select the NFTABLES framework (Default IP(6)TABLES).')
 	group3.add_argument("-nftproto", '--nftproto', default='ip', choices=['ip', 'ip6', 'inet'], help='Select the protocol NFTABLES, before rule (Auto ipv4 on "ip" or -ipv6 to "ip6").')
@@ -237,6 +238,7 @@ def createParser():
 	group4 = parser.add_argument_group('Settings', 'Configurations.')
 	group4.add_argument("-con", '--console', dest="console", metavar='CONSOLE', type=str, default='sh', help='Enther the console name (Default "sh").')
 	group4.add_argument ('-cmd', '--cmd', action='store_true', default=False, help='View the command and exit the program without executing it.')
+	group4.add_argument ('-lslan', '--lslan', action='store_true', default=False, help='View a list of network interfaces.')
 	group4.add_argument ('-sd', '--showdir', action='store_true', default=False, help='Show working directory.')
 	group4.add_argument("-logfile", '--logfile', dest="logfile", metavar='LOGFILE', type=str, default=f"{log_file}", help='Log file.')
 	group4.add_argument ('-nolog', '--nolog', action='store_false', default=True, help="Do not log events.")
@@ -593,22 +595,26 @@ def cicle_list(data_list, current_list, isadd: bool, args: Arguments):
 		args.add = args.isadd
 		args.isadd = None
 
+def choice_list_net():
+	return f"ls /sys/class/net | xargs"
+
 def switch_iptables(args: Arguments, case = None):
 	''' Selecting a command to execute in the command shell. '''
 	return {
-			'add-white': f"sudo {args.protocol} -t {args.table} -A {args.chain} -s {args.current_ip} -j ACCEPT",
-			'del-white': f"sudo {args.protocol} -t {args.table} -D {args.chain} -s {args.current_ip} -j ACCEPT",
-			'add-black': f"sudo {args.protocol} -t {args.table} -A {args.chain} -s {args.current_ip} -j DROP",
-			'del-black': f"sudo {args.protocol} -t {args.table} -D {args.chain} -s {args.current_ip} -j DROP",
-			'read': f"sudo {args.protocol} -L {args.chain}"
+			'add-white': f"sudo {args.protocol} -t {args.table} -A {args.chain} {args.interfaces} -s {args.current_ip} -j ACCEPT",
+			'del-white': f"sudo {args.protocol} -t {args.table} -D {args.chain} {args.interfaces} -s {args.current_ip} -j ACCEPT",
+			'add-black': f"sudo {args.protocol} -t {args.table} -A {args.chain} {args.interfaces} -s {args.current_ip} -j DROP",
+			'del-black': f"sudo {args.protocol} -t {args.table} -D {args.chain} {args.interfaces} -s {args.current_ip} -j DROP",
+			'read': f"sudo {args.protocol} -L {args.chain}",
+			'list-net': f"ls /sys/class/net"
 	}.get(case, f"sudo {args.protocol} -L {args.chain}")
 
 def switch_nftables(args: Arguments, case = None, handle = None):
 	''' Selecting a command to execute NFTABLES in the command shell. '''
 	return {
-			'add-white': f"sudo nft 'add rule {args.nftproto} {args.table} {args.chain} {args.protocol} saddr {args.current_ip} counter accept'",
+			'add-white': f"sudo nft 'add rule {args.nftproto} {args.table} {args.chain} {args.interfaces} {args.protocol} saddr {args.current_ip} counter accept'",
 			'del-white': f"sudo nft delete rule {args.nftproto} {args.table} {args.chain} handle {handle}",
-			'add-black': f"sudo nft 'add rule {args.nftproto} {args.table} {args.chain} {args.protocol} saddr {args.current_ip} counter drop'",
+			'add-black': f"sudo nft 'add rule {args.nftproto} {args.table} {args.chain} {args.interfaces} {args.protocol} saddr {args.current_ip} counter drop'",
 			'del-black': f"sudo nft delete rule {args.nftproto} {args.table} {args.chain} handle {handle}",
 			'read': f"sudo nft list chain {args.nftproto} {args.table} {args.chain}",
 			'read-parent': f"sudo nft list table {args.nftproto} {args.table}",
@@ -619,7 +625,8 @@ def switch_nftables(args: Arguments, case = None, handle = None):
 			'del-table': f"sudo nft delete table {args.nftproto} {args.table}",
 			'del-chain': f"sudo nft delete chain {args.nftproto} {args.table} {args.chain}",
 			'flush-table': f"sudo nft flush table {args.nftproto} {args.table}",
-			'flush-chain': f"sudo nft flush chain {args.nftproto} {args.table} {args.chain}"
+			'flush-chain': f"sudo nft flush chain {args.nftproto} {args.table} {args.chain}",
+			'list-net': f"ls /sys/class/net"
 	}.get(case, f"sudo nft list table {args.nftproto} {args.table}")
 
 def switch_cmds(case = None):
@@ -1709,7 +1716,9 @@ def EditTableParam(args: Arguments):
 		args.protocol = 'iptables' if not args.ipv6 else 'ip6tables'
 		args.table = 'filter'
 		args.chain = 'INPUT'
+		args.interfaces = f"-i {args.network}" if args.network != '' else ''
 	else:
+		args.interfaces = f"iifname \"{args.network}\"" if args.network != '' else ''
 		args.protocol = 'ip' if not args.ipv6 else 'ip6'
 		if args.nftproto != 'inet':
 			args.nftproto = 'ip' if not args.ipv6 else 'ip6'
@@ -1841,6 +1850,18 @@ def main():
 	
 	if args.info:
 		print(infromation)
+		sys.exit(0)
+	
+	if args.lslan:
+		if not args.nftables:
+			_commands = switch_iptables(args, 'list-net')
+		else:
+			_commands = switch_nftables(args, 'list-net')
+		service_info, err = shell_run(args.console, _commands)
+		if service_info != '':
+			print(service_info)
+		if err != '':
+			print(f"{err}{_commands}")
 		sys.exit(0)
 	
 	if args.onlist != None:

@@ -1,4 +1,9 @@
 -----
+04.08.2023 - 22:30 GMT +3
+py-blacklist 2.2.0:
+* Added the ability to bind rules to a specific network interface.
+* Added the ability to view all available network interfaces.
+-----
 02.08.2023 - 19:30 GMT +3
 py-blacklist 2.1.1:
 * Added a security list. The location in the system cannot be changed. Used only when blocking and unblocking IP addresses in Netfilter. If you forget to unblock the ip address in Netfilter and delete it from any list, it will remain in the security list and the next time you launch any "service" menu, it will automatically be removed from Netfilter.

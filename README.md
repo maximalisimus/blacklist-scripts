@@ -57,7 +57,7 @@ sudo make DESTDIR=/ install-filter
 
 В данных предустановленных фильтрах для **Fail2ban** содержаться регулярные выражения для отдельного отслеживания всех ошибок самого *Nginx* как такового из файла **&laquo;/var/log/nginx/error.log&raquo;** или похожем, а также отслеживания статусных состояний &laquo;4xx ошибка в запросе&raquo; и &laquo;5xx ошибка сервера&raquo; из файла **&laquo;/var/log/nginx/access.log&raquo;** или похожем пользовательском.
 
-**Обратите внимание!** <u>Данные предустановленные регулярные варыжения в указанных фильтрах являются достаточно жесткими. Если вы не уверены в том, что сами не совершите ошибок во время настроек или при их использовании - откажитесь от их установки и применения!</u>
+**Обратите внимание!** Данные предустановленные регулярные варыжения в указанных фильтрах являются достаточно жесткими. Если вы не уверены в том, что сами не совершите ошибок во время настроек или при их использовании - откажитесь от их установки и применения!
 
 Для установки действий **action**-ов для **Fail2ban**-а воспользуйтесь командой их установки:
 
@@ -163,6 +163,9 @@ NFTABLES:
                         Используйте осторожно!
   -fine, --fine         Полная очистка таблиц NFTABLES от всех настроек.
                         Используйте осторожно!
+  -net NETWORK, -network NETWORK, --network NETWORK
+                        Имя интерфейса, через который должен быть получен
+                        обрабатываемый пакет. Т.е. входной сетевой интерфейс.
   -ipv6, --ipv6         Принудительный выбор протокола IPV6.
   -nft, --nftables      Выбер фреймворка NFTABLES (по умолчанию IP(6)TABLES).
   -nftproto {ip,ip6,inet}, --nftproto {ip,ip6,inet}
@@ -198,6 +201,7 @@ NFTABLES:
   -con CONSOLE, --console CONSOLE
                         Ввод имени консоли (по умолчанию "sh").
   -cmd, --cmd           Посмотреть команды и выйти без выполнения.
+  -lslan, --lslan       Просмотр списка сетевых интерфейсов.
   -sd, --showdir        Показать рабочий каталог.
   -logfile LOGFILE, --logfile LOGFILE
                         Файл журнала.
@@ -226,6 +230,10 @@ NFTABLES:
 При удалении и очистки таблиц и цепочек есть определённые ограничения, связанные со стандартными таблицами и цепочками системы в пакетах со слоем совместимости между **NFTABLES** и **IP(6)TABLES** Netfilter-а. Поэтому не удивляйтесь если таблица или цепочка не была удалена из системы или не была очищена. Это сделано только для безопасности. 
 
 Но, есть одна маленькая хитрость. Вы можете с помощью ключей **-cmd**, **-fine** и **-e** посмотреть на все команды завершения, и использовать их на свой страх и риск. Или соответствующими ключами изменить наименование таблиц и / или цепочек и снова указать **-cmd**, **-fine** и **-e**, чтобы посмотреть на все команды завершения с изменёнными значениями и также использовать их на свой страх и риск.
+
+При указании ключа **-net** появляется возможность привязки блокировки или разрешающего правила к определённому сетевому интерфейсу.
+
+Соответственно, с помощью ключа **-lslan** можно посмотреть список всех доступных сетевых интерфейсов.
 
 Ещё одно пояснение касается выбора протокола **-ipv6**. Вообще при вводе ip-адресов протокол определяется автоматически и также автоматически корректируется. Однако, протокол можно принудительно поменять.
 
@@ -534,7 +542,7 @@ sudo make DESTDIR=/ install-filter
 
 These preset filters for **Fail2ban** contain regular expressions for separate tracking of all errors of *Nginx itself* as such from the file **/var/log/nginx/error.log** or similar, as well as tracking the status states of "4xx error in the request" and "5xx server error" from the file **/var/log/nginx/access.log** or similar custom.
 
-****Pay attention!** <u>These preset regular expressions in the specified filters are quite rigid. If you are not sure that you yourself will not make mistakes during the settings or when using them - refuse to install and use them!</u>
+****Pay attention!** These preset regular expressions in the specified filters are quite rigid. If you are not sure that you yourself will not make mistakes during the settings or when using them - refuse to install and use them!
 
 To install the **action**s for **Fail2ban**, use the command to install them:
 
@@ -640,6 +648,10 @@ NFTABLES:
                         carefully!
   -fine, --fine         Full clearing NFTABLES tables from all settings. Use
                         carefully!
+  -net NETWORK, -network NETWORK, --network NETWORK
+                        The name of the interface through which the processed
+                        packet should be received. That is, the input network
+                        interface.
   -ipv6, --ipv6         Forced IPV6 protocol selection.
   -nft, --nftables      Select the NFTABLES framework (Default IP(6)TABLES).
   -nftproto {ip,ip6,inet}, --nftproto {ip,ip6,inet}
@@ -669,6 +681,7 @@ Settings:
                         Enther the console name (Default "sh").
   -cmd, --cmd           View the command and exit the program without
                         executing it.
+  -lslan, --lslan       View a list of network interfaces.
   -sd, --showdir        Show working directory.
   -logfile LOGFILE, --logfile LOGFILE
                         Log file.
@@ -697,6 +710,10 @@ Or you can use any other keys without *-personal*, *-run* and *-fine* separately
 When deleting and cleaning tables and chains, there are certain limitations associated with standard tables and chains of the system in packages with a compatibility layer between **NFTABLES** and **IP(6)TABLES** Netfilter. Therefore, do not be surprised if the table or chain has not been deleted from the system or has not been cleaned up. This is done only for security. 
 
 But, there is one little trick. You can use the keys **-cmd**, **-fine** and **-e** to look at all the completion commands, and use them at your own risk. Or use the appropriate keys to change the name of tables and/or chains and again specify **-cmd**, **-fine** and **-e** to look at all completion commands with changed values and also use them at your own risk.
+
+When specifying the **-net** key, it becomes possible to bind a lock or a permissive rule to a specific network interface.
+
+Accordingly, using the **-lslan** key, you can view a list of all available network interfaces.
 
 Another explanation concerns the choice of protocol **-ipv6**. In general, when entering ip addresses, the protocol is determined automatically and also automatically corrected. However, the protocol can be forcibly changed.
 
