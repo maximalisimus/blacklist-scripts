@@ -285,6 +285,7 @@ options:
   -reload, --reload     Перезапустить черный список.
   -show, --show         Перечислите правила в Netfilter.
   -parent, --parent     Просмотр родительского элемента. Только для NFTABLES.
+  -tb, --tb             Просмотр списка доступных таблиц NFTABLES.
   -link, --link         Символическая ссылка на программу в «/usr/bin/».
   -unlink, --unlink     Удалить ссылку на программу в «/usr/bin/».
   -name NAME, --name NAME
@@ -764,6 +765,7 @@ options:
                         {IP,IP6,NF}TABLES.
   -reload, --reload     Restarting the blacklist.
   -show, --show         List the rules in Netfilter.
+  -tb, --tb             View a list of available tables NFTABLES.
   -link, --link         Symlink to program on «/usr/bin/».
   -unlink, --unlink     Unlink to program on «/usr/bin/».
   -name NAME, --name NAME

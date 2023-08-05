@@ -1,4 +1,9 @@
 -----
+05.08.2023 - 14:10 GMT +3
+py-blacklist 2.3.0:
+* For NFTABLES, a view of the list of all available tables has been added.
+* Fixed "F2B" actions to simplify interactions with the latter.
+-----
 04.08.2023 - 22:30 GMT +3
 py-blacklist 2.2.0:
 * Added the ability to bind rules to a specific network interface.

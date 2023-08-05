@@ -14,12 +14,12 @@ __progname__ = 'py-blacklist.py'
 __copyright__ = f"© The \"{__progname__}\". Copyright  by 2023."
 __credits__ = ["Mikhail Artamonov"]
 __license__ = "GPL3"
-__version__ = "2.2.0"
+__version__ = "2.3.0"
 __maintainer__ = "Mikhail Artamonov"
 __email__ = "maximalis171091@yandex.ru"
 __status__ = "Production"
 __date__ = '09.07.2023'
-__modifed__ = '04.08.2023'
+__modifed__ = '05.08.2023'
 __contact__ = 'VK: https://vk.com/shadow_imperator'
 
 infromation = f"Author: {__author__}\nProgname: {__progname__}\nVersion: {__version__}\n" + \
@@ -171,6 +171,7 @@ def createParser():
 	parser_service.add_argument ('-reload', '--reload', action='store_true', default=False, help='Restarting the blacklist.')
 	parser_service.add_argument ('-show', '--show', action='store_true', default=False, help='Show the status of NETFILTER tables in a given chain.')
 	parser_service.add_argument ('-parent', '--parent', action='store_true', default=False, help='Viewing the parent. Only for NFTABLES.')
+	parser_service.add_argument ('-tb', '--tb', action='store_true', default=False, help='View a list of available tables.')
 	parser_service.add_argument ('-link', '--link', action='store_true', default=False, help='Symlink to program on «/usr/bin/».')
 	parser_service.add_argument ('-unlink', '--unlink', action='store_true', default=False, help='Unlink to program on «/usr/bin/».')
 	parser_service.add_argument("-name", '--name', dest="name", metavar='NAME', type=str, default='blacklist', help='The name of the symlink for the location in the programs directory is «/usr/bin/». (Default "blacklist").')
@@ -618,6 +619,7 @@ def switch_nftables(args: Arguments, case = None, handle = None):
 			'del-black': f"sudo nft delete rule {args.nftproto} {args.table} {args.chain} handle {handle}",
 			'read': f"sudo nft list chain {args.nftproto} {args.table} {args.chain}",
 			'read-parent': f"sudo nft list table {args.nftproto} {args.table}",
+			'read-tables': f"sudo nft list tables",
 			'search': f"sudo nft --handle --numeric list chain {args.nftproto} {args.table} {args.chain} | grep -Ei 'ip saddr|# handle'" + \
 			''' | sed 's/^[ \t]*//' | awk '!/^$/{print $0}' ''',
 			'create-chain': f"nft add chain {args.nftproto} {args.table} {args.chain}" + ''' '{ type filter hook input priority 0; policy accept; }\'''',
@@ -1199,11 +1201,15 @@ def servicework(args: Arguments):
 			if args.cmd:
 				if args.parent:
 					print(switch_nftables(args, 'read-parent'))
+				elif args.tb:
+					print(switch_nftables(args, 'read-tables'))
 				else:
 					print(switch_nftables(args, 'read'))
 				sys.exit(0)
 			if args.parent:
 				args.iptables_info, err = shell_run(args.console, switch_nftables(args, 'read-parent'))
+			elif args.tb:
+				args.iptables_info, err = shell_run(args.console, switch_nftables(args, 'read-tables'))
 			else:
 				args.iptables_info, err = shell_run(args.console, switch_nftables(args, 'read'))
 			if args.iptables_info != '':
@@ -1211,6 +1217,8 @@ def servicework(args: Arguments):
 			if err != '':
 				if args.parent:
 					_commands = switch_nftables(args, 'read-parent')
+				elif args.tb:
+					_commands = switch_nftables(args, 'read-tables')
 				else:
 					_commands = switch_nftables(args, 'read')
 				print(f"{err}{_commands}")
