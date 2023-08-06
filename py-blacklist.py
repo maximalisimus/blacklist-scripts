@@ -185,6 +185,7 @@ def createParser():
 	parser_blist.add_argument ('-d', '--delete', action='store_true', default=False, help='Remove from the blacklist.')
 	parser_blist.add_argument ('-s', '--show', action='store_true', default=False, help='Read the blacklist.')
 	parser_blist.add_argument ('-j', '--json', action='store_true', default=False, help='JSON fromat show.')
+	parser_blist.add_argument("-indent", '--indent', metavar='INDENT', type=int, default=2, help='JSON indent (Default: 2).')
 	parser_blist.add_argument ('-save', '--save', action='store_true', default=False, help='Save show info.')
 	parser_blist.add_argument("-o", '--output', dest="output", metavar='OUTPUT', type=str, default=f"{json_black}", help='Output blacklist file.')
 	parser_blist.add_argument ('-empty', '--empty', action='store_true', default=False, help='Clear the blacklist. Use carefully!')
@@ -201,6 +202,7 @@ def createParser():
 	parser_wlist.add_argument ('-d', '--delete', action='store_true', default=False, help='Remove from the whitelist.')
 	parser_wlist.add_argument ('-s', '--show', action='store_true', default=False, help='Read the whitelist.')
 	parser_wlist.add_argument ('-j', '--json', action='store_true', default=False, help='JSON fromat show.')
+	parser_wlist.add_argument("-indent", '--indent', metavar='INDENT', type=int, default=2, help='JSON indent (Default: 2).')
 	parser_wlist.add_argument ('-save', '--save', action='store_true', default=False, help='Save show info.')
 	parser_wlist.add_argument("-o", '--output', dest="output", metavar='OUTPUT', type=str, default=f"{json_white}", help='Output whitelist file.')
 	parser_wlist.add_argument ('-empty', '--empty', action='store_true', default=False, help='Clear the whitelist. Use carefully!')
@@ -250,14 +252,14 @@ def createParser():
 	
 	return [parser, subparsers, parser_service, parser_systemd, parser_blist, parser_wlist, pgroup1, pgroup2, group1, group2, group3, group4]
 
-def read_write_json(jfile, typerw, data = dict()):
+def read_write_json(jfile, typerw, data = dict(), indent: int = 2):
 	''' The function of reading and writing JSON objects. '''
 	with open(jfile, typerw) as fp:
 		if typerw == 'r':
 			data = json.load(fp)
 			return data
 		else:
-			json.dump(data, fp, indent=2)
+			json.dump(data, fp, indent=indent)
 
 def read_write_text(onfile, typerw, data = ""):
 	''' The function of reading and writing text files. '''
@@ -1478,14 +1480,37 @@ def listwork(args: Arguments):
 		''' Displaying information on the screen, 
 			according to the specified criteria. '''
 		data = ''
+		jobj = args.blacklist_json if args.onlist == 'black' else args.whitelist_json
+		dict_filter  = dict()
+		tmp_filter = dict()
+		if args.ip:
+			for elem in range(len(args.ip)):
+				for x, y in jobj.items():
+					if str(args.ip[elem]) in x:
+						dict_filter[x] = y
 		if not args.json:
-			data = '\n'.join(show_json(args.blacklist_json if args.onlist == 'black' else args.whitelist_json, args.count))
-			print(data)
+			if dict_filter:
+				data = '\n'.join(show_json(dict_filter, args.count))
+			else:
+				data = '\n'.join(show_json(jobj, args.count))
 		else:
-			data = json.dumps(args.blacklist_json if args.onlist == 'black' else args.whitelist_json, indent=2)
-			print(data)
+			if args.count == 0:
+				if dict_filter:
+					data = json.dumps(dict_filter, indent=args.indent)
+				else:
+					data = json.dumps(jobj, indent=args.indent)
+			else:
+				spcae = ' ' * args.indent
+				data = '{\n'
+				if dict_filter:
+					data += ',\n'.join(tuple(f"{spcae}\"{x}\": {y}" for x,y in dict_filter.items() if y >= args.count))
+				else:
+					data += ',\n'.join(tuple(f"{spcae}\"{x}\": {y}" for x,y in jobj.items() if y >= args.count))
+				data += '\n}'
 		if args.save:
 			read_write_text(args.output, 'w', data + '\n')
+		else:
+			print(data)
 	
 	def clear_list(args: Arguments):
 		''' Clear (reset) the list. '''
@@ -1563,7 +1588,7 @@ def listwork(args: Arguments):
 			if args.ischange:
 				args6_to_args4(args)
 		if args.save:
-			read_write_json(args.output, 'w', args.json_data)
+			read_write_json(args.output, 'w', args.json_data, args.indent)
 		args.current_ip = None
 		args.json_data = None
 	
