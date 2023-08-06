@@ -1459,7 +1459,7 @@ def servicework(args: Arguments):
 			if err != '':
 				logger.error(f"{err}{_commands}")
 			if err6 != '':
-				alogger.error(f"{err6}{_commands6}")
+				logger.error(f"{err6}{_commands6}")
 		check_blackwhite(args)
 		unban_blackwhite(args)
 		write_blackwhite(args)
