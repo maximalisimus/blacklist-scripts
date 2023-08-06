@@ -175,6 +175,7 @@ def createParser():
 	parser_service.add_argument ('-link', '--link', action='store_true', default=False, help='Symlink to program on «/usr/bin/».')
 	parser_service.add_argument ('-unlink', '--unlink', action='store_true', default=False, help='Unlink to program on «/usr/bin/».')
 	parser_service.add_argument("-name", '--name', dest="name", metavar='NAME', type=str, default='blacklist', help='The name of the symlink for the location in the programs directory is «/usr/bin/». (Default "blacklist").')
+	parser_service.add_argument("-grep", '--grep', dest="grep", metavar='GREP', type=str, default='', help='Filtering Netfilter output according to the specified regular expression.')
 	parser_service.set_defaults(onlist='service')
 	
 	parser_blist = subparsers.add_parser('black', help='Managing blacklists.')
@@ -1212,6 +1213,13 @@ def servicework(args: Arguments):
 				args.iptables_info, err = shell_run(args.console, switch_nftables(args, 'read-tables'))
 			else:
 				args.iptables_info, err = shell_run(args.console, switch_nftables(args, 'read'))
+			if args.grep != '':
+				regexp = re.compile(args.grep)
+				match = re.finditer(regexp, args.iptables_info)
+				if match:
+					re_math = [x for x in match if x != '']
+					edit_tables_info = '\n'.join(list(map(lambda x: args.iptables_info[:x.start()].split('\n')[-1] + args.iptables_info[x.start():].split('\n')[0], re_math)))
+					args.iptables_info = edit_tables_info
 			if args.iptables_info != '':
 				print(f"{args.iptables_info}")
 			if err != '':
