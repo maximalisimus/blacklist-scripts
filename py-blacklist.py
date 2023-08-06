@@ -1870,15 +1870,11 @@ def test_edit_arguments(args: Arguments):
 def main():	
 	''' The main cycle of the program. '''
 	
-	global infromation, service_text, parser, logger
+	global infromation, service_text, parser
 	
 	parser = createParser()
 	args = Arguments()
 	parser[0].parse_args(namespace=Arguments)
-	
-	if args.nolog:
-		args.log_txt = []
-		args.log_txt.clear()
 	
 	test_edit_arguments(args)
 	
