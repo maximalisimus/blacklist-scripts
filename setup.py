@@ -3,7 +3,7 @@ from os.path import join, dirname
 
 setup(
     name='blacklist-scripts',
-    version='2.4.1',
+    version='2.4.2',
     long_description=open(join(dirname(__file__), 'README.md')).read(),
     author='Mikhail Artamonov',
     author_email='maximalis171091@yandex.ru',
