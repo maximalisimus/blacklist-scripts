@@ -1,4 +1,9 @@
 -----
+10.08.2023 - 16:45 GMT +3
+py-blacklist 2.4.0:
+* Added a new menu for analyzing, viewing, filtering and displaying the activity of blacklist IP addresses in log files connected to Fail2ban. The data can be displayed either on the display or in a separate file. You specify the log files yourself, because the location of these files in the system can be changed.
+* Added a menu for filtering the output of the contents of the main script log file by the latest date or regular expression.
+-----
 05.08.2023 - 14:10 GMT +3
 py-blacklist 2.3.0:
 * For NFTABLES, a view of the list of all available tables has been added.
