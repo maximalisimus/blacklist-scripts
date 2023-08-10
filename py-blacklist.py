@@ -14,12 +14,12 @@ __progname__ = 'py-blacklist.py'
 __copyright__ = f"© The \"{__progname__}\". Copyright  by 2023."
 __credits__ = ["Mikhail Artamonov"]
 __license__ = "GPL3"
-__version__ = "2.3.0"
+__version__ = "2.4.0"
 __maintainer__ = "Mikhail Artamonov"
 __email__ = "maximalis171091@yandex.ru"
 __status__ = "Production"
 __date__ = '09.07.2023'
-__modifed__ = '05.08.2023'
+__modifed__ = '10.08.2023'
 __contact__ = 'VK: https://vk.com/shadow_imperator'
 
 infromation = f"Author: {__author__}\nProgname: {__progname__}\nVersion: {__version__}\n" + \
@@ -54,8 +54,11 @@ script_name = pathlib.Path(sys.argv[0]).resolve().name
 script_full = f"{workdir}/{script_name}"
 script_tmp = f"{workdir}/tmpfile"
 
-log_name = 'blacklist_log.txt'
+log_name = 'blacklist_log.log'
 log_file = pathlib.Path(f"{workdir}").resolve().joinpath(log_name)
+
+log_activity_name = 'blacklist_activity.log'
+log_activity_file = pathlib.Path(f"{workdir}").resolve().joinpath(log_activity_name)
 
 service_text = ''
 st1 = '''[Unit]
@@ -92,7 +95,7 @@ WantedBy=timers.target
 systemd_service_file = pathlib.Path('/etc/systemd/system/blacklist@.service').resolve()
 systemd_timer_file = pathlib.Path('/etc/systemd/system/blacklist@.timer').resolve()
 
-parser = ""
+parser_dict = ""
 logger = ""
 
 class Arguments:
@@ -141,7 +144,7 @@ def createParser():
 	''' The function of creating a parser with a certain hierarchy 
 		of calls. Returns the parser itself and the sub-parser, 
 		as well as groups of parsers, if any. '''
-	global json_black, json_white, workdir, log_file
+	global json_black, json_white, workdir, log_file, log_activity_file
 	
 	parser = argparse.ArgumentParser(prog=__progname__,description='The Fail2Ban black and white lists in Python.')
 	parser.add_argument ('-v', '--version', action='version', version=f'{__progname__} {__version__}',  help='Version.')
@@ -192,7 +195,7 @@ def createParser():
 	parser_blist.set_defaults(onlist='black')
 	
 	pgroup1 = parser_blist.add_argument_group('Addressing', 'IP address management.')
-	pgroup1.add_argument("-ip", '--ip', metavar='IP', type=str, default=[''], nargs='+', help='IP addresses.')
+	pgroup1.add_argument("-ip", '--ip', metavar='IP', type=str, default=[], nargs='+', help='IP addresses.')
 	pgroup1.add_argument("-m", '--mask', dest="mask", metavar='MASK', type=int, default=[], nargs='+', help='Network Masks.')
 	
 	parser_wlist = subparsers.add_parser('white', help='Managing whitelists.')
@@ -209,7 +212,7 @@ def createParser():
 	parser_wlist.set_defaults(onlist='white')
 	
 	pgroup2 = parser_wlist.add_argument_group('Addressing', 'IP address management.')
-	pgroup2.add_argument("-ip", '--ip', metavar='IP', type=str, default=[''], nargs='+', help='IP addresses.')
+	pgroup2.add_argument("-ip", '--ip', metavar='IP', type=str, default=[], nargs='+', help='IP addresses.')
 	pgroup2.add_argument("-m", '--mask', dest="mask", metavar='MASK', type=int, default=[], nargs='+', help='Network Masks.')
 	
 	group1 = parser.add_argument_group('Parameters', 'Settings for the number of bans.')
@@ -239,6 +242,16 @@ def createParser():
 	group3.add_argument ('-cleartable', '--cleartable', action='store_true', default=False, help='Clear the table in NFTABLES. Use carefully!')
 	group3.add_argument ('-clearchain', '--clearchain', action='store_true', default=False, help='Clear the chain in NFTABLES. Use carefully!')
 	
+	parser_activity = subparsers.add_parser('active', help='Activity in log files.')
+	parser_activity.add_argument("-filelog", '--filelog', dest="filelog", metavar='FILELOG', type=str, default=f"{log_activity_file}", help='The log file in which the activity of ip addresses from the blacklist is recorded.')
+	parser_activity.add_argument("-search", '--search', metavar='SEARCH', type=str, default=[], nargs='+', help='List the log files in which to search for the activity of blacklist ip addresses, according to the specified number of locks.')
+	parser_activity.add_argument ('-empty', '--empty', action='store_true', default=False, help='Clear the log file of ip addresses activity from the blacklist.')
+	parser_activity.add_argument ('-s', '--show', action='store_true', default=False, help='View the activity log file, which records the activity of ip addresses according to the specified number of locks.')
+	parser_activity.add_argument ('-save', '--save', action='store_true', default=False, help='Save show info.')
+	parser_activity.add_argument("-o", '--output', dest="output", metavar='OUTPUT', type=str, default='', help='Save show info to file.')
+	parser_activity.add_argument("-grep", '--grep', dest="grep", metavar='GREP', type=str, default='', help='Filtering the output of the ip address activity log according to the specified regular expression.')
+	parser_activity.set_defaults(onlist='activity')
+	
 	group4 = parser.add_argument_group('Settings', 'Configurations.')
 	group4.add_argument("-con", '--console', dest="console", metavar='CONSOLE', type=str, default='sh', help='Enther the console name (Default "sh").')
 	group4.add_argument ('-cmd', '--cmd', action='store_true', default=False, help='View the command and exit the program without executing it.')
@@ -248,9 +261,18 @@ def createParser():
 	group4.add_argument ('-nolog', '--nolog', action='store_false', default=True, help="Do not log events.")
 	group4.add_argument ('-limit', '--limit', action='store_true', default=False, help='Limit the log file. Every day the contents of the log will be completely erased.')
 	group4.add_argument ('-viewlog', '--viewlog', action='store_true', default=False, help='View the log file.')
+	group4.add_argument ('-latest', '--latest', action='store_true', default=False, help='Output everything from the log by the last record date.')
+	group4.add_argument("-fil", "-filtering", '--filtering', dest="filtering", metavar='FILTERING', type=str, default='', help='Filter the log output.')
 	group4.add_argument ('-resetlog', '--resetlog', action='store_true', default=False, help='Reset the log file.')
 	
-	return [parser, subparsers, parser_service, parser_systemd, parser_blist, parser_wlist, pgroup1, pgroup2, group1, group2, group3, group4]
+	dict_parser = { 'parser': parser,  'subparsers': subparsers, 
+					'parser_service': parser_service, 'parser_systemd': parser_systemd, 
+					'parser_blist': parser_blist, 'parser_wlist': parser_wlist,
+					'parser_activity': parser_activity,
+					'pgroup1': pgroup1, 'pgroup2': pgroup2, 
+					'group1': group1, 'group2': group2, 'group3': group3, 'group4': group4
+					}
+	return dict_parser
 
 def read_write_json(jfile, typerw, data = dict(), indent: int = 2):
 	''' The function of reading and writing JSON objects. '''
@@ -599,6 +621,67 @@ def cicle_list(data_list, current_list, isadd: bool, args: Arguments):
 		args.add = args.isadd
 		args.isadd = None
 
+def grep_search(instr, args: Arguments):
+	''' Grep search. '''
+	outstr = ''
+	if args.grep != '':
+		regexp = re.compile(args.grep)
+		match = re.finditer(regexp, instr)
+		if match:
+			re_math = [x for x in match if x != '']
+			edit_str = '\n'.join(list(map(lambda x: instr[:x.start()].split('\n')[-1] + instr[x.start():].split('\n')[0], re_math)))
+			outstr = edit_str
+	return outstr
+
+def switch_activity(args: Arguments, case = None):
+	''' Selecting a command to execute in the command shell. '''
+	return {
+			'search': f"sudo cat \"{args.current_log}\" | grep -Ei \"{args.current_ip}\""
+	}.get(case, None)
+
+def search_activity(args: Arguments):
+	''' Search for activity in logs. '''
+	args.old_counts = -1
+	if args.count == 0:
+		args.old_counts = args.count
+		args.count = 1
+	data = show_json(args.blacklist_json, args.count)
+	out_info = ''
+	out_err = ''
+	out_commands = ''
+	if args.cmd:
+		for on_log in args.search:
+			args.current_log = str(on_log)
+			for ip in data:
+				args.current_ip = ip_no_mask(ip)
+				current_commands = switch_activity(args, 'search')
+				print(current_commands)
+		if args.old_counts == 0:
+			args.count = 0
+		args.current_ip = None
+		args.current_log = None
+		sys.exit(0)
+	for on_log in args.search:
+		args.current_log = str(on_log)
+		for ip in data:
+			args.current_ip = ip_no_mask(ip)
+			current_commands = switch_activity(args, 'search')
+			if current_commands != None:
+				service_info, err = shell_run(args.console, current_commands)
+				if service_info != '':
+					out_commands += f"\n{current_commands}"
+					out_info += f"\n{service_info}"
+				if err != '':
+					out_err += err
+	if out_info != '':
+		read_write_text(args.filelog, 'a', out_info)
+	if out_err != '':
+		read_write_text(args.filelog, 'a', f"{out_err}{out_commands}")
+	if args.old_counts == 0:
+		args.count = 0
+	args.current_ip = None
+	args.current_log = None
+
 def choice_list_net():
 	return f"ls /sys/class/net | xargs"
 
@@ -902,7 +985,7 @@ def service_build(args: Arguments):
 
 def systemdwork(args: Arguments):
 	''' Systemd management. '''
-	global service_text, timer_text, systemd_service_file, systemd_timer_file, parser, logger
+	global service_text, timer_text, systemd_service_file, systemd_timer_file, parser_dict, logger
 	
 	if args.count == 0:
 		args.count = 3
@@ -1136,12 +1219,12 @@ def systemdwork(args: Arguments):
 		print(f"\nSystemd file «{systemd_service_file.name}» and «{systemd_timer_file.name}» not found!")
 		print(f"Please enter «-create» to create system files before accessing Systemd functions!\n")
 	if not args.log_txt:
-		parser[0].parse_args(['systemd', '-h'])
+		parser_dict['parser'].parse_args(['systemd', '-h'])
 		sys.exit(0)
 
 def servicework(args: Arguments):
 	''' Processing of service commands. '''
-	global script_full, script_name, script_tmp, parser
+	global script_full, script_name, script_tmp, parser_dict
 	global logger
 	
 	def service_start_stop(args: Arguments):
@@ -1216,12 +1299,9 @@ def servicework(args: Arguments):
 			else:
 				args.iptables_info, err = shell_run(args.console, switch_nftables(args, 'read'))
 			if args.grep != '':
-				regexp = re.compile(args.grep)
-				match = re.finditer(regexp, args.iptables_info)
-				if match:
-					re_math = [x for x in match if x != '']
-					edit_tables_info = '\n'.join(list(map(lambda x: args.iptables_info[:x.start()].split('\n')[-1] + args.iptables_info[x.start():].split('\n')[0], re_math)))
-					args.iptables_info = edit_tables_info
+				grep_str = grep_search(args.iptables_info, args)
+				if grep_str != '':
+					args.iptables_info = grep_str
 			if args.iptables_info != '':
 				print(f"{args.iptables_info}")
 			if err != '':
@@ -1466,13 +1546,13 @@ def servicework(args: Arguments):
 		AppExit(args)
 	if not args.cmd:
 		if not args.log_txt:
-			parser[0].parse_args(['service', '-h'])
+			parser_dict['parser'].parse_args(['service', '-h'])
 			sys.exit(0)
 
 def listwork(args: Arguments):
 	''' Working with lists. '''
 	
-	global parser, logger
+	global parser_dict, logger
 	
 	CreateTableChain(args)
 	
@@ -1657,11 +1737,38 @@ def listwork(args: Arguments):
 			rez = args.show + args.ban + args.unban + args.add + args.delete
 			if rez == 0:
 				if args.onlist == 'black':
-					parser[0].parse_args(['black', '-h'])
+					parser_dict['parser'].parse_args(['black', '-h'])
 				elif args.onlist == 'white':
-					parser[0].parse_args(['white', '-h'])
+					parser_dict['parser'].parse_args(['white', '-h'])
 				sys.exit(0)
 	AppExit(args)
+
+def activity_work(args: Arguments):
+	''' Working with the IP address activity log. '''
+	if args.search:
+		read_list(args)
+		search_activity(args)
+		sys.exit(0)
+	if args.show:
+		if args.filelog.exists():
+			data = read_write_text(args.filelog, 'r')
+			if args.grep:
+				data_filter = grep_search(data, args)
+				if data_filter != '':
+					data = data_filter
+			if args.save:
+				args.output = pathlib.Path(str(args.output)).resolve()
+				read_write_text(args.output, 'w', data)
+			else:
+				print(data)
+		sys.exit(0)
+	if args.empty:
+		if args.save:
+			read_write_text(args.filelog, 'w', '\n')
+		else:
+			print(f"{__progname__} {__version__}: To save the information, please enter the \"-save\" key.")
+		sys.exit(0)
+	parser_dict['parser'].parse_args(['active', '-h'])
 
 def CreateTableChain(args: Arguments):
 	''' Function to create your table, chain on NFTABLES '''
@@ -1786,28 +1893,43 @@ def EditDirParam(args: Arguments):
 	''' Edit online directoryes Params. '''	
 	
 	global workdir, json_black, json_white, blacklist_name, whitelist_name
-	global blackwhite_file
+	global blackwhite_file, log_activity_file, log_activity_name
 	
 	args.blackwhite_file = blackwhite_file
 	read_blackwhite(args)
 	
 	if workdir != args.workdir:
 		workdir = args.workdir
-		json_black = pathlib.Path(f"{workdir}/{blacklist_name}").resolve()
-		json_white = pathlib.Path(f"{workdir}/{whitelist_name}").resolve()
+		json_black = pathlib.Path(f"{workdir}").resolve().joinpath(blacklist_name)
+		json_white = pathlib.Path(f"{workdir}").resolve().joinpath(whitelist_name)
 		if blacklist_name in args.blacklist:
 			args.blacklist = json_black
+		else:
+			args.blacklist = pathlib.Path(f"{args.blacklist}").resolve()
 		if whitelist_name in args.whitelist:
 			args.whitelist = json_white
+		else:
+			args.whitelist = pathlib.Path(f"{args.whitelist}").resolve()
 		if args.onlist == 'black':
 			if blacklist_name in args.output:
 				args.output = json_black
+			else:
+				args.output = pathlib.Path(f"{args.output}").resolve()
 		elif args.onlist == 'white':
 			if whitelist_name in args.output:
 				args.output = json_white
+			else:
+				args.output = pathlib.Path(f"{args.output}").resolve()
+		
+		log_activity_file = pathlib.Path(f"{workdir}").resolve().joinpath(log_activity_name)
+		if log_activity_name in args.filelog:
+			args.filelog = log_activity_file
+		else:
+			args.filelog = pathlib.Path(f"{args.filelog}").resolve()
 	
 	args.blacklist = pathlib.Path(f"{args.blacklist}").resolve()
 	args.whitelist = pathlib.Path(f"{args.whitelist}").resolve()
+	args.filelog = pathlib.Path(f"{args.filelog}").resolve()
 	if str(args.output) != '':
 		if args.output != None:
 			args.output = pathlib.Path(f"{args.output}").resolve()
@@ -1818,6 +1940,10 @@ def EditDirParam(args: Arguments):
 	
 	if not pathlib.Path(str(workdir)).resolve().exists():
 		pathlib.Path(str(workdir)).resolve().mkdir(parents=True)
+	
+	if args.search:
+		for k in range(len(args.search)):
+			args.search[k] = pathlib.Path(f"{args.search[k]}").resolve()
 	
 	if args.showdir:
 		print(workdir)
@@ -1845,7 +1971,19 @@ def EditLogParam(args: Arguments):
 			if file_date != ondate:
 				read_write_text(args.logfile, 'w', '\n')
 		if args.viewlog:
-			print(read_write_text(args.logfile, 'r'))
+			if args.latest:
+				latest_date = read_write_text(args.logfile, 'r').split('\n')[-2].split(' ')[0] if not read_write_text(args.logfile, 'r').split('\n')[-1] else read_write_text(args.logfile, 'r').split('\n')[-2].split(' ')[0]
+				args.grep = args.filtering = f"{latest_date}"
+				out_log_info = grep_search(read_write_text(args.logfile, 'r'), args)
+				if out_log_info != '':
+					print(out_log_info)
+			elif args.filtering != '':
+				args.grep = args.filtering
+				out_log_info = grep_search(read_write_text(args.logfile, 'r'), args)
+				if out_log_info != '':
+					print(out_log_info)
+			else:
+				print(read_write_text(args.logfile, 'r'))
 			sys.exit(0)
 		if args.resetlog:
 			read_write_text(args.logfile, 'w', '\n')
@@ -1870,11 +2008,11 @@ def test_edit_arguments(args: Arguments):
 def main():	
 	''' The main cycle of the program. '''
 	
-	global infromation, service_text, parser
+	global infromation, service_text, parser_dict
 	
-	parser = createParser()
+	parser_dict = createParser()
 	args = Arguments()
-	parser[0].parse_args(namespace=Arguments)
+	parser_dict['parser'].parse_args(namespace=Arguments)
 	
 	test_edit_arguments(args)
 	
@@ -1882,7 +2020,8 @@ def main():
 			'service': servicework,
 			'systemd': systemdwork,
 			'black': listwork,
-			'white': listwork
+			'white': listwork,
+			'activity': activity_work
 			}
 	
 	if args.info:
@@ -1906,7 +2045,7 @@ def main():
 	else:
 		if args.exit:
 			AppExit(args)
-		parser[0].parse_args(['-h'])
+		parser_dict['parser'].parse_args(['-h'])
 
 if __name__ == '__main__':
 	main()
