@@ -241,12 +241,13 @@ NFTABLES:
 
 Ещё одно пояснение касается выбора протокола **-ipv6**. Вообще при вводе ip-адресов протокол определяется автоматически и также автоматически корректируется. Однако, протокол можно принудительно поменять.
 
-Ключи **-latest** и **-fil** имеют смысл только при использовании ещё одного ключа - **-viewlog**. Т.е. только при просмотре журнала событий. НО, использовать одноврменно можно только один из 2 ключей - либо **-latest**, либо **-fil**. первый из них выведет всё содержимое журнала согласно последней дате записи. Второй будет фильтровать всё содержимое согласно введёной строке регулярного выражения в сам аргумент. 
+Ключи **-latest** и **-fil** имеют смысл только при использовании ещё одного ключа - **-viewlog**. Т.е. только при просмотре журнала событий. Использовать одноврменно можно оба ключа - и **-latest**, и **-fil**. Первый из них выведет всё содержимое журнала согласно последней дате записи. Второй будет фильтровать всё оставшееся содержимое согласно введёной строке регулярного выражения в сам аргумент. Либо просто отфильтрует содержимое всего журнала согласно строке регулярного выражения, если ключ **-latest** не задан.
 
-Например, выведем всё содержимое журнала по последней дате записи в него.
+Например, выведем всё содержимое журнала по последней дате записи в него. И также, попробуем добавить фильтрацию по какой-нибудь строке, например, частичному ip-адресу.
 
 ```bash
 $ ./py-blacklist.py -viewlog -latest
+$ ./py-blacklist.py -viewlog -latest -fil "193"
 ```
 
 А теперь попробуем отфильтровать только определнные записи, например, какой-нибудь ip-адрес или время или строка в конце записей журнала.
@@ -520,6 +521,12 @@ options:
                         Фильтрация выходных данных журнала активности 
                         ip-адресов в соответствии с указанным 
                         регулярным выражением.
+
+Addressing:
+  IP address management.
+
+  -ip IP [IP ...], --ip IP [IP ...]
+                        IP адреса.
 ```
 
 Первое на что нужно обратить внимание - ключ **-search**. После него вы указываете полный пути ко всем нужным вам файлам логов, в которых необходимо произвести анализ активности имеющегося черного списка ip-адресов. Анализ активности вводимых вручную ip-адресов пока что не предусмотрен.
@@ -532,6 +539,12 @@ $ ./py-blacklist.py -c 3 active -search /var/log/nginx/access.log /var/log/my_se
 
 # А можно и так.
 $ ./py-blacklist.py active -search /var/log/nginx/access.log /var/log/my_service/access.log
+```
+
+Вот другой пример сканирования тех же самых файлов журналов **NGINX** на активность. Однако, здесь будет сканирование непосредственно заданных ip-адресов через ключ **-ip**.
+
+```bash
+$ sudo ./py-blacklist.py active -ip 172.96.172.196/32 35.247.128.229/32 34.101.106.173/32 146.190.24.151/32 193.35.18.89/32 -search /var/log/nginx/access.log /var/log/my_service/access.log
 ```
 
 Только после того, как вы просканировали лог-файлы на активность, результат, сохранённый в отдельный файл, можно посмотреть и отфильтровать вывод на экран, чтобы просто уменьшить последний.
@@ -814,10 +827,11 @@ Another explanation concerns the choice of protocol **-ipv6**. In general, when 
 
 The keys **-latest** and **-fil** make sense only when using another key - **-viewlog**. I.e. only when viewing the event log. HOWEVER, only one of the 2 keys can be used at the same time - either **-latest** or **-fil**. the first one will output the entire contents of the log according to the last record date. The second one will filter all the contents according to the entered regular expression string in the argument itself. 
 
-For example, we will output all the contents of the log by the last date of entry into it.
+For example, we will output all the contents of the log by the last date of entry into it. And also, let's try to add filtering by some string, for example, a partial ip address.
 
 ```bash
 $ ./py-blacklist.py -viewlog -latest
+$ ./py-blacklist.py -viewlog -latest -fil "193"
 ```
 
 And now let's try to filter out only certain entries, for example, some ip address or time or a line at the end of the log entries.
@@ -1088,6 +1102,12 @@ options:
   -grep GREP, --grep GREP
                         Filtering the output of the ip addreses activity log
                         according to the specified regular expression.
+
+Addressing:
+  IP address management.
+
+  -ip IP [IP ...], --ip IP [IP ...]
+                        IP addresses.
 ```
 
 The first thing you need to pay attention to is the **-search** key. After it, you specify the full paths to all the log files you need, in which you need to analyze the activity of the existing blacklist of ip addresses. Analysis of the activity of manually entered IP addresses is not yet provided.
@@ -1100,6 +1120,12 @@ $ ./py-blacklist.py -c 3 active -search /var/log/nginx/access.log /var/log/my_se
 
 # Or you can do that.
 $ ./py-blacklist.py active -search /var/log/nginx/access.log /var/log/my_service/access.log
+```
+
+Here is another example of scanning the same **NGINX** log files for activity. However, there will be a scan of directly specified ip addresses via the **-ip** key.
+
+```bash
+$ sudo ./py-blacklist.py active -ip 172.96.172.196/32 35.247.128.229/32 34.101.106.173/32 146.190.24.151/32 193.35.18.89/32 -search /var/log/nginx/access.log /var/log/my_service/access.log
 ```
 
 Only after you have scanned the log files for activity, the result saved in a separate file can be viewed and filtered out to the screen to simply reduce the latter.

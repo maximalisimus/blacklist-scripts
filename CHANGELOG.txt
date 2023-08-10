@@ -1,4 +1,9 @@
 -----
+10.08.2023 - 21:10 GMT +3
+py-blacklist 2.4.1:
+* Fixed the possibility of simultaneous use of the keys **-latest** and **-filtering** (**-fil**).
+* In the **active** menu, after entering log files using the **-search** key, the ability to analyze the activity of ip addresses that are entered using the **-ip** command line argument has been added.
+-----
 10.08.2023 - 16:45 GMT +3
 py-blacklist 2.4.0:
 * Added a new menu for analyzing, viewing, filtering and displaying the activity of blacklist IP addresses in log files connected to Fail2ban. The data can be displayed either on the display or in a separate file. You specify the log files yourself, because the location of these files in the system can be changed.

@@ -14,7 +14,7 @@ __progname__ = 'py-blacklist.py'
 __copyright__ = f"© The \"{__progname__}\". Copyright  by 2023."
 __credits__ = ["Mikhail Artamonov"]
 __license__ = "GPL3"
-__version__ = "2.4.0"
+__version__ = "2.4.1"
 __maintainer__ = "Mikhail Artamonov"
 __email__ = "maximalis171091@yandex.ru"
 __status__ = "Production"
@@ -252,6 +252,9 @@ def createParser():
 	parser_activity.add_argument("-grep", '--grep', dest="grep", metavar='GREP', type=str, default='', help='Filtering the output of the ip addreses activity log according to the specified regular expression.')
 	parser_activity.set_defaults(onlist='activity')
 	
+	pgroup3 = parser_activity.add_argument_group('Addressing', 'IP address management.')
+	pgroup3.add_argument("-ip", '--ip', metavar='IP', type=str, default=[], nargs='+', help='IP addresses.')
+	
 	group4 = parser.add_argument_group('Settings', 'Configurations.')
 	group4.add_argument("-con", '--console', dest="console", metavar='CONSOLE', type=str, default='sh', help='Enther the console name (Default "sh").')
 	group4.add_argument ('-cmd', '--cmd', action='store_true', default=False, help='View the command and exit the program without executing it.')
@@ -269,7 +272,7 @@ def createParser():
 					'parser_service': parser_service, 'parser_systemd': parser_systemd, 
 					'parser_blist': parser_blist, 'parser_wlist': parser_wlist,
 					'parser_activity': parser_activity,
-					'pgroup1': pgroup1, 'pgroup2': pgroup2, 
+					'pgroup1': pgroup1, 'pgroup2': pgroup2, 'pgroup3': pgroup3,
 					'group1': group1, 'group2': group2, 'group3': group3, 'group4': group4
 					}
 	return dict_parser
@@ -645,7 +648,7 @@ def search_activity(args: Arguments):
 	if args.count == 0:
 		args.old_counts = args.count
 		args.count = 1
-	data = show_json(args.blacklist_json, args.count)
+	data = show_json(args.blacklist_json, args.count) if len(args.ip) == 0 else args.ip
 	out_info = ''
 	out_err = ''
 	out_commands = ''
@@ -1971,17 +1974,19 @@ def EditLogParam(args: Arguments):
 			if file_date != ondate:
 				read_write_text(args.logfile, 'w', '\n')
 		if args.viewlog:
+			out_log_info = ''
 			if args.latest:
 				latest_date = read_write_text(args.logfile, 'r').split('\n')[-2].split(' ')[0] if not read_write_text(args.logfile, 'r').split('\n')[-1] else read_write_text(args.logfile, 'r').split('\n')[-2].split(' ')[0]
+				args.old_filtering = args.filtering
 				args.grep = args.filtering = f"{latest_date}"
 				out_log_info = grep_search(read_write_text(args.logfile, 'r'), args)
-				if out_log_info != '':
-					print(out_log_info)
-			elif args.filtering != '':
+				args.filtering = args.old_filtering
+				args.old_filtering = None
+			if args.filtering != '':
 				args.grep = args.filtering
-				out_log_info = grep_search(read_write_text(args.logfile, 'r'), args)
-				if out_log_info != '':
-					print(out_log_info)
+				out_log_info = grep_search(out_log_info if out_log_info != '' else read_write_text(args.logfile, 'r'), args)
+			if out_log_info != '':
+				print(out_log_info)
 			else:
 				print(read_write_text(args.logfile, 'r'))
 			sys.exit(0)
