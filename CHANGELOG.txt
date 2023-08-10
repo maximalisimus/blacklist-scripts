@@ -1,5 +1,13 @@
 -----
 10.08.2023 - 21:10 GMT +3
+py-blacklist 2.4.2:
+* Change the order of imports and authorship variables to display the information correctly.
+* The script was moved to a separate package folder.
+* You can now work with the script as with a package.
+* Added setup.py
+* In README.md information about this installation method has been entered.
+-----
+10.08.2023 - 21:10 GMT +3
 py-blacklist 2.4.1:
 * Fixed the possibility of simultaneous use of the keys **-latest** and **-filtering** (**-fil**).
 * In the **active** menu, after entering log files using the **-search** key, the ability to analyze the activity of ip addresses that are entered using the **-ip** command line argument has been added. Switching between the built-in blacklist and the entered IP addresses is performed automatically.

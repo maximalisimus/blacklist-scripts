@@ -23,7 +23,7 @@
 
 ## <a name="Setup">1. Установка.</a>
 
-Для установки программы воспользуйтесь следующей командой:
+Для установки программы воспользуйтесь следующей командой при помощи **Makefile**:
 
 ```bash
 cd ~
@@ -91,6 +91,47 @@ sudo make DESTDIR=/ all
 * uninstall-jail - удалить предустановленные правила,
 * uninstall-all - удалить все предустановленные функции **Fail2ban**-а.
 * clear - удалить и саму программу и все предустановленные функции **Fail2ban**-а.
+
+Если же вы хотите использовать способ установки с помощью **setup.py**, воспользуйтесь следующим методом.
+
+С помощью следующей команды проверьте, что у вас установлена ​​актуальная версия setuptools.
+
+```bash
+Debian: $ sudo apt install python-virtualenv python3-virtualenv python3-venv virtualenv python3-virtualenvwrapper
+Archlinux: $ sudo pacman -S python-virtualenv python-virtualenvwrapper
+Python PIP: $ python -m pip install --upgrade pip setuptools virtualenv virtualenvwrapper --upgrade
+```
+
+Также клонируем репозиторий и переходим в него.
+
+```bash
+cd ~
+git clone https://github.com/maximalisimus/blacklist-scripts.git
+cd blacklist-scripts
+```
+
+Устанавливаем.
+
+```bash
+# Так
+$ python setup.py install
+
+# Или так
+$ pip install .
+```
+
+Для сборки утилиты в 2 вида пакета - архив (скорее всего **.tar.gz**) со всеми необходимыми файлами и **.whl** файл для **PIP**-а, воспользутесь следующей командой.
+
+```bash
+# Сначала перейдите в каталог с репозиторием.
+$ cd blacklist-scripts
+
+# Можно собирать.
+$ python setup.py sdist bdist_wheel
+
+```
+
+В папке dist должны повится 2 соответствующих архива.
 
 ---
 
@@ -611,7 +652,7 @@ Fail2Ban black and white lists.
 
 ## <a name="SetupEng">1. Installation</a>
 
-To install the program, use the following command:
+To install the program, use the following command using **Makefile**:
 
 ```bash
 cd ~
@@ -679,6 +720,47 @@ To remove the program and/or additional functions for **Fail2ban**-and in **Make
 * uninstall-tool - remove preset rules,
 * uninstall-all - remove all pre-installed functions **Fail2ban**-a.
 * clear - delete both the program itself and all pre-installed functions **Fail2ban**-a.
+
+If you want to use the installation method using **setup.py **, use the following method.
+
+Use the following command to check that you have the current version of setuptools installed.
+
+```bash
+Debian: $ sudo apt install python-virtualenv python3-virtualenv python3-venv virtualenv python3-virtualenvwrapper
+Archlinux: $ sudo pacman -S python-virtualenv python-virtualenvwrapper
+Python PIP: $ python -m pip install --upgrade pip setuptools virtualenv virtualenvwrapper --upgrade
+```
+
+We also clone the repository and go to it.
+
+```bash
+cd ~
+git clone https://github.com/maximalisimus/blacklist-scripts.git
+cd blacklist-scripts
+```
+
+Installing.
+
+```bash
+# Так
+$ python setup.py install
+
+# Или так
+$ pip install .
+```
+
+To build the utility into 2 types of packages - an archive (most likely **.tar.gz **) with all the necessary files and **.whl** file for **PIP**, use the following command.
+
+```bash
+# First, go to the repository directory.
+$ cd blacklist-scripts
+
+# You can collect.
+$ python setup.py sdist bdist_wheel
+
+```
+
+2 corresponding archives should appear in the dist folder.
 
 ---
 

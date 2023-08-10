@@ -2,7 +2,8 @@ DESTDIR=./
 POSTDIR=etc
 INSTALLDIR=/
 TARGET=blacklist-scripts
-SCRIPT=py-blacklist.py
+SRC=pyblacklist
+SCRIPT=pyblacklist.py
 SYMLINK=blacklist
 SETUPDIR=$(DESTDIR)$(POSTDIR)/$(TARGET)
 EXEC=$(INSTALLDIR)$(POSTDIR)/$(TARGET)/$(SCRIPT)
@@ -29,7 +30,10 @@ all: install install-all
 install:
 	rm -rf $(SETUPDIR)
 	mkdir -p $(SETUPDIR) $(DESTDIR)usr/bin/
-	install -Dm 755 $(SCRIPT) $(SETUPDIR)/
+	install -Dm 755 $(SRC)/$(SCRIPT) $(SETUPDIR)/
+	install -Dm 755 LICENSE $(SETUPDIR)/
+	install -Dm 755 README.md $(SETUPDIR)/
+	install -Dm 755 MANIFEST.in $(SETUPDIR)/
 	ln -s $(EXEC) $(SETUPEXEC) 2>/dev/null
 	chmod +x $(DESTDIR)$(POSTDIR)/$(TARGET)/$(SCRIPT) 2>/dev/null
 

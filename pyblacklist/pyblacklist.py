@@ -9,25 +9,6 @@ maximalis171091@yandex.ru
 # License: GPL3
 """
 
-__author__ = 'Mikhail Artamonov'
-__progname__ = 'py-blacklist.py'
-__copyright__ = f"© The \"{__progname__}\". Copyright  by 2023."
-__credits__ = ["Mikhail Artamonov"]
-__license__ = "GPL3"
-__version__ = "2.4.1"
-__maintainer__ = "Mikhail Artamonov"
-__email__ = "maximalis171091@yandex.ru"
-__status__ = "Production"
-__date__ = '09.07.2023'
-__modifed__ = '10.08.2023'
-__contact__ = 'VK: https://vk.com/shadow_imperator'
-
-infromation = f"Author: {__author__}\nProgname: {__progname__}\nVersion: {__version__}\n" + \
-			f"Date of creation: {__date__}\nLast modified date: {__modifed__}\n" + \
-			f"License: {__license__}\nCopyright: {__copyright__}\nCredits: {__credits__}\n" + \
-			f"Maintainer: {__maintainer__}\nStatus: {__status__}\n" + \
-			f"E-Mail: {__email__}\nContacts: {__contact__}"
-
 import argparse
 import json
 import pathlib
@@ -38,6 +19,25 @@ import subprocess
 import re
 from datetime import datetime
 import logging
+
+__author__ = 'Mikhail Artamonov'
+__progname__ = str(pathlib.Path(sys.argv[0]).resolve().name)
+__copyright__ = f"© The \"{__progname__}\". Copyright  by 2023."
+__credits__ = ["Mikhail Artamonov"]
+__license__ = "GPL3"
+__version__ = "2.4.2"
+__maintainer__ = "Mikhail Artamonov"
+__email__ = "maximalis171091@yandex.ru"
+__status__ = "Production"
+__date__ = '09.07.2023'
+__modifed__ = '11.08.2023'
+__contact__ = 'VK: https://vk.com/shadow_imperator'
+
+infromation = f"Author: {__author__}\nProgname: {__progname__}\nVersion: {__version__}\n" + \
+			f"Date of creation: {__date__}\nLast modified date: {__modifed__}\n" + \
+			f"License: {__license__}\nCopyright: {__copyright__}\nCredits: {__credits__}\n" + \
+			f"Maintainer: {__maintainer__}\nStatus: {__status__}\n" + \
+			f"E-Mail: {__email__}\nContacts: {__contact__}"
 
 workdir = str(pathlib.Path(sys.argv[0]).resolve().parent)
 if workdir.endswith('/'):
@@ -2010,14 +2010,17 @@ def test_edit_arguments(args: Arguments):
 	if args.exit:
 		CreateTableChain(args)
 
-def main():	
+def main(*argv):
 	''' The main cycle of the program. '''
 	
 	global infromation, service_text, parser_dict
 	
 	parser_dict = createParser()
 	args = Arguments()
-	parser_dict['parser'].parse_args(namespace=Arguments)
+	if len(argv) > 0:
+		parser_dict['parser'].parse_args(args=argv, namespace=Arguments)
+	else:
+		parser_dict['parser'].parse_args(namespace=Arguments)
 	
 	test_edit_arguments(args)
 	
