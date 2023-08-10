@@ -125,12 +125,13 @@ options:
 Управление:
   Команды управления.
 
-  {systemd,service,black,white}
+  {systemd,service,black,white,active}
                         команды помощи.
     systemd             Управление Systemd.
     service             Управление программой.
     black               Управление черными списками.
     white               Управление белыми списками.
+    active              Активность в файлах журнала.
 
 Параметры:
   Настройки количества запретов.
@@ -209,6 +210,9 @@ NFTABLES:
   -limit, --limit       Ограничьте размер файла журнала. Каждый день 
                         журнал будет стираться.
   -viewlog, --viewlog   Посмотреть журнал событий.
+  -latest, --latest     Вывод журнала событий по последней дате.
+  -fil FILTERING, -filtering FILTERING, --filtering FILTERING
+                        Отфильтруйте выходные данные журнала.
   -resetlog, --resetlog
                         Сброс файла журнала.
 ```
@@ -236,6 +240,20 @@ NFTABLES:
 Соответственно, с помощью ключа **-lslan** можно посмотреть список всех доступных сетевых интерфейсов.
 
 Ещё одно пояснение касается выбора протокола **-ipv6**. Вообще при вводе ip-адресов протокол определяется автоматически и также автоматически корректируется. Однако, протокол можно принудительно поменять.
+
+Ключи **-latest** и **-fil** имеют смысл только при использовании ещё одного ключа - **-viewlog**. Т.е. только при просмотре журнала событий. НО, использовать одноврменно можно только один из 2 ключей - либо **-latest**, либо **-fil**. первый из них выведет всё содержимое журнала согласно последней дате записи. Второй будет фильтровать всё содержимое согласно введёной строке регулярного выражения в сам аргумент. 
+
+Например, выведем всё содержимое журнала по последней дате записи в него.
+
+```bash
+$ ./py-blacklist.py -viewlog -latest
+```
+
+А теперь попробуем отфильтровать только определнные записи, например, какой-нибудь ip-адрес или время или строка в конце записей журнала.
+
+```bash
+$ ./py-blacklist.py -viewlog -fil "193"
+```
 
 Рассмотрим меню Systemd.
 
@@ -472,6 +490,77 @@ $ ./py-blacklist.py -c 3 black -s -j -ip 193 185 -o ./data.txt -save
 
 ```
 
+А теперь рассмотрим меню **active**. Это меню предназначено для анализа активности черного списка в заданных файлах логов. Также имеется возможность просматривать получившийся журнал активности и очищать. В дополинение можно изменить местоположение данного журнала в системе, а вывод на дисплей можно немного отфильтровать согласно ведённому регулярному выражению. Либо вы можете сохранить полученный результат в любой указанный вами файл.
+
+```bash
+$ ./py-blacklist.py active -h
+
+usage: py-blacklist.py active [-h] [-filelog FILELOG]
+                              [-search SEARCH [SEARCH ...]] [-empty] [-s]
+                              [-save] [-o OUTPUT] [-grep GREP]
+
+options:
+  -h, --help            Показать справку и выйти
+  -filelog FILELOG, --filelog FILELOG
+                        Файл журнала, в который записывается активность 
+                        ip-адресов из черного списка.
+  -search SEARCH [SEARCH ...], --search SEARCH [SEARCH ...]
+                        Перечислите файлы журналов, в которых следует 
+                        искать активность ip-адресов из черного списка, 
+                        в соответствии с указанным количеством блокировок.
+  -empty, --empty       Очистить файл журнала активности ip-адресов 
+                        из черного списка.
+  -s, --show            Просмотрите файл журнала активности, 
+                        в котором записывается активность ip-адресов 
+                        в соответствии с указанным количеством блокировок.
+  -save, --save         Сохраните информацию о просмотре.
+  -o OUTPUT, --output OUTPUT
+                        Сохраните информацию о просмотре в файл.
+  -grep GREP, --grep GREP
+                        Фильтрация выходных данных журнала активности 
+                        ip-адресов в соответствии с указанным 
+                        регулярным выражением.
+```
+
+Первое на что нужно обратить внимание - ключ **-search**. После него вы указываете полный пути ко всем нужным вам файлам логов, в которых необходимо произвести анализ активности имеющегося черного списка ip-адресов. Анализ активности вводимых вручную ip-адресов пока что не предусмотрен.
+
+Например. В данном случае будут просканированы 2 лог-файла NGINX, причём не на все ip-адреса, а только на те, у которых количество блокировок в черном списке записано в количестве **3** единицы. Но можно просканировать и на все ip-адреса. Для этого достаточно либо указать 1, либо вообще не использовать ключ **-c**.
+
+```bash
+# Можно так
+$ ./py-blacklist.py -c 3 active -search /var/log/nginx/access.log /var/log/my_service/access.log
+
+# А можно и так.
+$ ./py-blacklist.py active -search /var/log/nginx/access.log /var/log/my_service/access.log
+```
+
+Только после того, как вы просканировали лог-файлы на активность, результат, сохранённый в отдельный файл, можно посмотреть и отфильтровать вывод на экран, чтобы просто уменьшить последний.
+
+Пока что просто посмотрим на результат поиска активности.
+
+```bash
+$ ./py-blacklist.py active -s
+```
+
+Попробуем отфильтровать последний вывод и пока что опять просто выведем всё на экран. В данном случае на экран будут выведены, например, только строки с цифрами **&laquo;193&raquo;**.
+
+```bash
+$ ./py-blacklist.py active -s -grep "193"
+```
+
+А теперь сохраним и первый и второй результат просмотра в некий отдельный файл.
+
+```bash
+$ ./py-blacklist.py active -s -save -o ./activity.log
+$ ./py-blacklist.py active -s -grep "193" -save -o ./activity.log
+```
+
+И наконец очистим журнал активности.
+
+```bash
+$ ./py-blacklist.py active -empty -save
+```
+
 ---
 
 ## <a name="about">3. Обо Мне</a>
@@ -611,12 +700,13 @@ options:
 Management:
   Management commands.
 
-  {systemd,service,black,white}
+  {systemd,service,black,white,active}
                         commands help.
     systemd             Systemd management.
     service             Program management.
     black               Managing blacklists.
     white               Managing whitelists.
+    active              Activity in log files.
 
 Parameters:
   Settings for the number of bans.
@@ -690,6 +780,10 @@ Settings:
   -limit, --limit       Limit the log file. Every day the contents of the log
                         will be completely erased.
   -viewlog, --viewlog   View the log file.
+  -latest, --latest     Output everything from the log by the last record
+                        date.
+  -fil FILTERING, -filtering FILTERING, --filtering FILTERING
+                        Filter the log output.
   -resetlog, --resetlog
                         Reset the log file.
 ```
@@ -717,6 +811,20 @@ When specifying the **-net** key, it becomes possible to bind a lock or a permis
 Accordingly, using the **-lslan** key, you can view a list of all available network interfaces.
 
 Another explanation concerns the choice of protocol **-ipv6**. In general, when entering ip addresses, the protocol is determined automatically and also automatically corrected. However, the protocol can be forcibly changed.
+
+The keys **-latest** and **-fil** make sense only when using another key - **-viewlog**. I.e. only when viewing the event log. HOWEVER, only one of the 2 keys can be used at the same time - either **-latest** or **-fil**. the first one will output the entire contents of the log according to the last record date. The second one will filter all the contents according to the entered regular expression string in the argument itself. 
+
+For example, we will output all the contents of the log by the last date of entry into it.
+
+```bash
+$ ./py-blacklist.py -viewlog -latest
+```
+
+And now let's try to filter out only certain entries, for example, some ip address or time or a line at the end of the log entries.
+
+```bash
+$ ./py-blacklist.py -viewlog -fil "193"
+```
 
 Consider the Systemd menu.
 
@@ -949,6 +1057,76 @@ $ ./py-blacklist.py -c 3 black -s -ip 193 185 -o ./data.txt -save
 # Filter out all ip addresses that are blocked 3 or more times in JSON format.
 $ ./py-blacklist.py -c 3 black -s -j -ip 193 185 -o ./data.txt -save
 
+```
+
+And now let's look at the **active** menu. This menu is designed to analyze the activity of the blacklist in the specified log files. It is also possible to view the resulting activity log and clear it. In addition, you can change the location of this log in the system, and the output to the display can be filtered a little according to the entered regular expression. Or you can save the result to any file you specify.
+
+```bash
+$ ./py-blacklist.py active -h
+
+usage: py-blacklist.py active [-h] [-filelog FILELOG]
+                              [-search SEARCH [SEARCH ...]] [-empty] [-s]
+                              [-save] [-o OUTPUT] [-grep GREP]
+
+options:
+  -h, --help            show this help message and exit
+  -filelog FILELOG, --filelog FILELOG
+                        The log file in which the activity of ip addresses
+                        from the blacklist is recorded.
+  -search SEARCH [SEARCH ...], --search SEARCH [SEARCH ...]
+                        List the log files in which to search for the activity
+                        of blacklist ip addresses, according to the specified
+                        number of locks.
+  -empty, --empty       Clear the log file of ip addresses activity from the
+                        blacklist.
+  -s, --show            View the activity log file, which records the activity
+                        of ip addresses according to the specified number of
+                        locks.
+  -save, --save         Save show info.
+  -o OUTPUT, --output OUTPUT
+                        Save show info to file.
+  -grep GREP, --grep GREP
+                        Filtering the output of the ip addreses activity log
+                        according to the specified regular expression.
+```
+
+The first thing you need to pay attention to is the **-search** key. After it, you specify the full paths to all the log files you need, in which you need to analyze the activity of the existing blacklist of ip addresses. Analysis of the activity of manually entered IP addresses is not yet provided.
+
+For example. In this case, 2 NGINX log files will be scanned, and not to all ip addresses, but only to those whose number of blacklisted locks is recorded in the number **3** units. But you can also scan for all ip addresses. To do this, it is enough to either specify 1, or not use the **-c** key at all.
+
+```bash
+# You can do this
+$ ./py-blacklist.py -c 3 active -search /var/log/nginx/access.log /var/log/my_service/access.log
+
+# Or you can do that.
+$ ./py-blacklist.py active -search /var/log/nginx/access.log /var/log/my_service/access.log
+```
+
+Only after you have scanned the log files for activity, the result saved in a separate file can be viewed and filtered out to the screen to simply reduce the latter.
+
+For now, just look at the activity search result.
+
+```bash
+$ ./py-blacklist.py active -s
+```
+
+Let's try to filter out the last output and for now we'll just display everything on the screen again. In this case, only lines with numbers **&laquo;193&raquo;** will be displayed on the screen, for example.
+
+```bash
+$ ./py-blacklist.py active -s -grep "193"
+```
+
+And now we will save both the first and second viewing results in a separate file.
+
+```bash
+$ ./py-blacklist.py active -s -save -o ./activity.log
+$ ./py-blacklist.py active -s -grep "193" -save -o ./activity.log
+```
+
+And finally clear the activity log.
+
+```bash
+$ ./py-blacklist.py active -empty -save
 ```
 
 ---

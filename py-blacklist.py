@@ -249,7 +249,7 @@ def createParser():
 	parser_activity.add_argument ('-s', '--show', action='store_true', default=False, help='View the activity log file, which records the activity of ip addresses according to the specified number of locks.')
 	parser_activity.add_argument ('-save', '--save', action='store_true', default=False, help='Save show info.')
 	parser_activity.add_argument("-o", '--output', dest="output", metavar='OUTPUT', type=str, default='', help='Save show info to file.')
-	parser_activity.add_argument("-grep", '--grep', dest="grep", metavar='GREP', type=str, default='', help='Filtering the output of the ip address activity log according to the specified regular expression.')
+	parser_activity.add_argument("-grep", '--grep', dest="grep", metavar='GREP', type=str, default='', help='Filtering the output of the ip addreses activity log according to the specified regular expression.')
 	parser_activity.set_defaults(onlist='activity')
 	
 	group4 = parser.add_argument_group('Settings', 'Configurations.')
