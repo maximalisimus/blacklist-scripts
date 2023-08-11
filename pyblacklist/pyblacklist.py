@@ -25,7 +25,7 @@ __progname__ = str(pathlib.Path(sys.argv[0]).resolve().name)
 __copyright__ = f"© The \"{__progname__}\". Copyright  by 2023."
 __credits__ = ["Mikhail Artamonov"]
 __license__ = "GPL3"
-__version__ = "2.4.2"
+__version__ = "2.4.3"
 __maintainer__ = "Mikhail Artamonov"
 __email__ = "maximalis171091@yandex.ru"
 __status__ = "Production"
@@ -1281,6 +1281,10 @@ def servicework(args: Arguments):
 				print(switch_iptables(args, 'read'))
 				sys.exit(0)
 			args.iptables_info, err = shell_run(args.console, switch_iptables(args, 'read'))
+			if args.grep != '':
+				grep_str = grep_search(args.iptables_info, args)
+				if grep_str != '':
+					args.iptables_info = grep_str
 			if args.iptables_info != '':
 				print(f"{args.iptables_info}")
 			if err != '':
