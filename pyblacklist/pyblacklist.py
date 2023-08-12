@@ -25,12 +25,12 @@ __progname__ = str(pathlib.Path(sys.argv[0]).resolve().name)
 __copyright__ = f"© The \"{__progname__}\". Copyright  by 2023."
 __credits__ = ["Mikhail Artamonov"]
 __license__ = "GPL3"
-__version__ = "2.4.3"
+__version__ = "2.5.0"
 __maintainer__ = "Mikhail Artamonov"
 __email__ = "maximalis171091@yandex.ru"
 __status__ = "Production"
 __date__ = '09.07.2023'
-__modifed__ = '11.08.2023'
+__modifed__ = '12.08.2023'
 __contact__ = 'VK: https://vk.com/shadow_imperator'
 
 infromation = f"Author: {__author__}\nProgname: {__progname__}\nVersion: {__version__}\n" + \
@@ -144,13 +144,55 @@ def createParser():
 	''' The function of creating a parser with a certain hierarchy 
 		of calls. Returns the parser itself and the sub-parser, 
 		as well as groups of parsers, if any. '''
+	
+	def add_black_white_subparser(perser_texts: dict, current_subparser, pars_dict: dict, name_parser: str, name_group: str):
+		''' Add subparser on blacklist or whitelist. '''
+		pars_dict[name_parser] = current_subparser.add_parser(perser_texts['title'], help=perser_texts['help'])
+		pars_dict[name_parser].add_argument ('-ban', '--ban', action='store_true', default=False, help=perser_texts['ban'])
+		pars_dict[name_parser].add_argument ('-unban', '--unban', action='store_true', default=False, help=perser_texts['unban'])
+		pars_dict[name_parser].add_argument ('-a', '--add', action='store_true', default=False, help=perser_texts['add'])
+		pars_dict[name_parser].add_argument ('-d', '--delete', action='store_true', default=False, help=perser_texts['delete'])
+		pars_dict[name_parser].add_argument ('-s', '--show', action='store_true', default=False, help=perser_texts['show'])
+		pars_dict[name_parser].add_argument ('-j', '--json', action='store_true', default=False, help=perser_texts['json'])
+		pars_dict[name_parser].add_argument("-indent", '--indent', metavar='INDENT', type=int, default=2, help=perser_texts['indent'])
+		pars_dict[name_parser].add_argument ('-save', '--save', action='store_true', default=False, help=perser_texts['save'])
+		pars_dict[name_parser].add_argument("-o", '--output', dest="output", metavar='OUTPUT', type=str, default=perser_texts['json_black'], help=perser_texts['output'])
+		pars_dict[name_parser].add_argument ('-empty', '--empty', action='store_true', default=False, help=perser_texts['clear'])
+		pars_dict[name_parser].set_defaults(onlist=perser_texts['onlist'])
+		#
+		pars_dict[name_group] = pars_dict[name_parser].add_argument_group(perser_texts['group-title'], perser_texts['group-help'])
+		pars_dict[name_group].add_argument("-ip", '--ip', metavar='IP', type=str, default=[], nargs='+', help=perser_texts['group-ip'])
+		pars_dict[name_group].add_argument("-m", '--mask', dest="mask", metavar='MASK', type=int, default=[], nargs='+', help=perser_texts['group-mask'])
+	
+	def create_grep_parser(pars_dict: dict, current_parser = None, name_parser: str = '', current_sub = '', name_sub = ''):
+		''' Create on grep parser or subparser. '''
+		if current_sub != '' and name_sub != '':
+			pars_dict[name_sub] = current_sub.add_subparsers(title='grep', description='Grep management.')
+			current_parser = pars_dict[name_sub]
+		if current_parser != None:
+			pars_dict[name_parser] = current_parser.add_parser('grep', help='Filtering of data output to the display or to a file.')
+			pars_dict[name_parser].add_argument("-R", "-regex", '--regex', dest="regex", metavar='REGEX', type=str, default='', help='Regular expression.')
+			pars_dict[name_parser].add_argument("-M", "-maxcount", '--maxcount', dest="maxcount", metavar='MAXCOUNT', type=int, default=0, help='Stop after the specified NUMBER of matched rows')
+			pars_dict[name_parser].add_argument ('-I','-ignorecase', '--ignorecase', action='store_true', default=False, help='Ignore the case of the string.')
+			pars_dict[name_parser].add_argument ('-v','-invert', '--invert', action='store_true', default=False, help='Select unsuitable lines.')
+			pars_dict[name_parser].add_argument ('-O','-only', '--only', action='store_true', default=False, help='Show only matched non-empty parts of strings')
+			pars_dict[name_parser].add_argument("-H", "-head", '--head', dest="head", metavar='HEAD', type=int, default=0, help='Print only the first N lines.')
+			pars_dict[name_parser].add_argument("-T", "-tail", '--tail', dest="tail", metavar='TAIL', type=int, default=0, help='Print only the last N lines.')
+			pars_dict[name_parser].set_defaults(grep=True)
+	
 	global json_black, json_white, workdir, log_file, log_activity_file
 	
+	dict_parser = dict()
+	
 	parser = argparse.ArgumentParser(prog=__progname__,description='The Fail2Ban black and white lists in Python.')
-	parser.add_argument ('-v', '--version', action='version', version=f'{__progname__} {__version__}',  help='Version.')
+	parser.add_argument ('-V', '--version', action='version', version=f'{__progname__} {__version__}',  help='Version.')
 	parser.add_argument ('-info', '--info', action='store_true', default=False, help='Information about the author.')
 	
+	dict_parser['parser'] = parser
+	
 	subparsers = parser.add_subparsers(title='Management', description='Management commands.', help='commands help.')
+	
+	dict_parser['subparsers'] = subparsers
 	
 	parser_systemd = subparsers.add_parser('systemd', help='Systemd management.')
 	parser_systemd.add_argument ('-create', '--create', action='store_true', default=False, help='Create «blacklist@.service» and «blacklist@.timer».')
@@ -165,7 +207,9 @@ def createParser():
 	parser_systemd.add_argument ('-reload', '--reload', action='store_true', default=False, help='Reload «blacklist@.service».')
 	parser_systemd.add_argument ('-starttimer', '--starttimer', action='store_true', default=False, help='Start «blacklist@.timer».')
 	parser_systemd.add_argument ('-stoptimer', '--stoptimer', action='store_true', default=False, help='Stop «blacklist@.timer».')
-	parser_systemd.set_defaults(onlist='systemd')	
+	parser_systemd.set_defaults(onlist='systemd')
+	
+	dict_parser['parser_systemd'] = parser_systemd
 	
 	parser_service = subparsers.add_parser('service', help='Program management.')
 	parser_service.add_argument ('-start', '--start', action='store_true', default=False, help='Launching the blacklist.')
@@ -178,51 +222,70 @@ def createParser():
 	parser_service.add_argument ('-link', '--link', action='store_true', default=False, help='Symlink to program on «/usr/bin/».')
 	parser_service.add_argument ('-unlink', '--unlink', action='store_true', default=False, help='Unlink to program on «/usr/bin/».')
 	parser_service.add_argument("-name", '--name', dest="name", metavar='NAME', type=str, default='blacklist', help='The name of the symlink for the location in the programs directory is «/usr/bin/». (Default "blacklist").')
-	parser_service.add_argument("-grep", '--grep', dest="grep", metavar='GREP', type=str, default='', help='Filtering Netfilter output according to the specified regular expression.')
 	parser_service.set_defaults(onlist='service')
 	
-	parser_blist = subparsers.add_parser('black', help='Managing blacklists.')
-	parser_blist.add_argument ('-ban', '--ban', action='store_true', default=False, help='Block IP addresses in {IP,IP6,NF}TABLES.')
-	parser_blist.add_argument ('-unban', '--unban', action='store_true', default=False, help='Unblock IP addresses in {IP,IP6,NF}TABLES.')
-	parser_blist.add_argument ('-a', '--add', action='store_true', default=False, help='Add to the blacklist.')
-	parser_blist.add_argument ('-d', '--delete', action='store_true', default=False, help='Remove from the blacklist.')
-	parser_blist.add_argument ('-s', '--show', action='store_true', default=False, help='Read the blacklist.')
-	parser_blist.add_argument ('-j', '--json', action='store_true', default=False, help='JSON fromat show.')
-	parser_blist.add_argument("-indent", '--indent', metavar='INDENT', type=int, default=2, help='JSON indent (Default: 2).')
-	parser_blist.add_argument ('-save', '--save', action='store_true', default=False, help='Save show info.')
-	parser_blist.add_argument("-o", '--output', dest="output", metavar='OUTPUT', type=str, default=f"{json_black}", help='Output blacklist file.')
-	parser_blist.add_argument ('-empty', '--empty', action='store_true', default=False, help='Clear the blacklist. Use carefully!')
-	parser_blist.set_defaults(onlist='black')
+	dict_parser['parser_service'] = parser_service
 	
-	pgroup1 = parser_blist.add_argument_group('Addressing', 'IP address management.')
-	pgroup1.add_argument("-ip", '--ip', metavar='IP', type=str, default=[], nargs='+', help='IP addresses.')
-	pgroup1.add_argument("-m", '--mask', dest="mask", metavar='MASK', type=int, default=[], nargs='+', help='Network Masks.')
+	create_grep_parser(dict_parser, None, 'grep_service_parser', dict_parser['parser_service'], 'service_grep_sub')
 	
-	parser_wlist = subparsers.add_parser('white', help='Managing whitelists.')
-	parser_wlist.add_argument ('-ban', '--ban', action='store_true', default=False, help='Allow ip addresses in {IP,IP6,NF}TABLES.')
-	parser_wlist.add_argument ('-unban', '--unban', action='store_true', default=False, help='Remove permissions from {IP,IP6,NF}TABLES.')
-	parser_wlist.add_argument ('-a', '--add', action='store_true', default=False, help='Add to the whitelist.')
-	parser_wlist.add_argument ('-d', '--delete', action='store_true', default=False, help='Remove from the whitelist.')
-	parser_wlist.add_argument ('-s', '--show', action='store_true', default=False, help='Read the whitelist.')
-	parser_wlist.add_argument ('-j', '--json', action='store_true', default=False, help='JSON fromat show.')
-	parser_wlist.add_argument("-indent", '--indent', metavar='INDENT', type=int, default=2, help='JSON indent (Default: 2).')
-	parser_wlist.add_argument ('-save', '--save', action='store_true', default=False, help='Save show info.')
-	parser_wlist.add_argument("-o", '--output', dest="output", metavar='OUTPUT', type=str, default=f"{json_white}", help='Output whitelist file.')
-	parser_wlist.add_argument ('-empty', '--empty', action='store_true', default=False, help='Clear the whitelist. Use carefully!')
-	parser_wlist.set_defaults(onlist='white')
+	parser_b_param = {
+						'title': 'black',
+						'help': 'Managing blacklists.',
+						'ban': 'Block IP addresses in {IP,IP6,NF}TABLES.',
+						'unban': 'Unblock IP addresses in {IP,IP6,NF}TABLES.',
+						'add': 'Add to the blacklist.',
+						'delete': 'Remove from the blacklist.',
+						'show': 'Read the blacklist.',
+						'json': 'JSON fromat show.',
+						'indent': 'JSON indent (Default: 2).',
+						'save': 'Save show info.',
+						'json_black': f"{json_black}",
+						'output': 'Output blacklist file.',
+						'clear': 'Clear the blacklist. Use carefully!',
+						'onlist': 'black',
+						'group-title': 'Addressing',
+						'group-help': 'IP address management.',
+						'group-ip': 'IP addresses.',
+						'group-mask': 'Network Masks.',
+					}
+	add_black_white_subparser(parser_b_param, subparsers, dict_parser, 'parser_blist', 'pgroup1')
 	
-	pgroup2 = parser_wlist.add_argument_group('Addressing', 'IP address management.')
-	pgroup2.add_argument("-ip", '--ip', metavar='IP', type=str, default=[], nargs='+', help='IP addresses.')
-	pgroup2.add_argument("-m", '--mask', dest="mask", metavar='MASK', type=int, default=[], nargs='+', help='Network Masks.')
+	parser_w_param = {
+						'title': 'white',
+						'help': 'Managing whitelists.',
+						'ban': 'Allow ip addresses in {IP,IP6,NF}TABLES.',
+						'unban': 'Remove permissions from {IP,IP6,NF}TABLES.',
+						'add': 'Add to the whitelist.',
+						'delete': 'Remove from the whitelist.',
+						'show': 'Read the whitelist.',
+						'json': 'JSON fromat show.',
+						'indent': 'JSON indent (Default: 2).',
+						'save': 'ave show info.',
+						'json_black': f"{json_white}",
+						'output': 'Output whitelist file.',
+						'clear': 'Clear the whitelist. Use carefully!',
+						'onlist': 'white',
+						'group-title': 'Addressing',
+						'group-help': 'IP address management.',
+						'group-ip': 'IP addresses.',
+						'group-mask': 'Network Masks.',
+					}
+	add_black_white_subparser(parser_w_param, subparsers, dict_parser, 'parser_wlist', 'pgroup2')
+	
+	create_grep_parser(dict_parser, subparsers, 'grep_parser')
 	
 	group1 = parser.add_argument_group('Parameters', 'Settings for the number of bans.')
 	group1.add_argument("-c", '--count', dest="count", metavar='COUNT', type=int, default=0, help='The number of locks after which the ip-address is entered in {IP,IP6,NF}TABLES (default 0).')
 	group1.add_argument("-q", '--quantity', dest="quantity", metavar='QUANTITY', type=int, default=0, help='The number of ip address locks to be saved (default 0).')
 	
+	dict_parser['group1'] = group1
+	
 	group2 = parser.add_argument_group('Files', 'Working with files.')
 	group2.add_argument("-wd", '--workdir', dest="workdir", metavar='WORKDIR', type=str, default=f"{workdir}", help='Working directory.')
 	group2.add_argument("-b", '--blacklist', dest="blacklist", metavar='BLACKLIST', type=str, default=f"{json_black}", help='Input blacklist file.')
 	group2.add_argument("-w", '--whitelist', dest="whitelist", metavar='WHITELIST', type=str, default=f"{json_white}", help='Input whitelist file.')
+	
+	dict_parser['group2'] = group2
 	
 	group3 = parser.add_argument_group('NFTABLES', 'Configuration NFTABLES.')
 	group3.add_argument ('-personal', '--personal', action='store_true', default=False, help='Personal settings of NFTABLES tables, regardless of the data entered.')
@@ -242,6 +305,8 @@ def createParser():
 	group3.add_argument ('-cleartable', '--cleartable', action='store_true', default=False, help='Clear the table in NFTABLES. Use carefully!')
 	group3.add_argument ('-clearchain', '--clearchain', action='store_true', default=False, help='Clear the chain in NFTABLES. Use carefully!')
 	
+	dict_parser['group3'] = group3
+	
 	parser_activity = subparsers.add_parser('active', help='Activity in log files.')
 	parser_activity.add_argument("-filelog", '--filelog', dest="filelog", metavar='FILELOG', type=str, default=f"{log_activity_file}", help='The log file in which the activity of ip addresses from the blacklist is recorded.')
 	parser_activity.add_argument("-search", '--search', metavar='SEARCH', type=str, default=[], nargs='+', help='List the log files in which to search for the activity of blacklist ip addresses, according to the specified number of locks.')
@@ -249,11 +314,15 @@ def createParser():
 	parser_activity.add_argument ('-s', '--show', action='store_true', default=False, help='View the activity log file, which records the activity of ip addresses according to the specified number of locks.')
 	parser_activity.add_argument ('-save', '--save', action='store_true', default=False, help='Save show info.')
 	parser_activity.add_argument("-o", '--output', dest="output", metavar='OUTPUT', type=str, default='', help='Save show info to file.')
-	parser_activity.add_argument("-grep", '--grep', dest="grep", metavar='GREP', type=str, default='', help='Filtering the output of the ip addreses activity log according to the specified regular expression.')
 	parser_activity.set_defaults(onlist='activity')
 	
 	pgroup3 = parser_activity.add_argument_group('Addressing', 'IP address management.')
 	pgroup3.add_argument("-ip", '--ip', metavar='IP', type=str, default=[], nargs='+', help='IP addresses.')
+	
+	dict_parser['parser_activity'] = parser_activity
+	dict_parser['pgroup3'] = pgroup3
+	
+	create_grep_parser(dict_parser, None, 'grep_active_parser', dict_parser['parser_activity'], 'active_grep_sub')
 	
 	group4 = parser.add_argument_group('Settings', 'Configurations.')
 	group4.add_argument("-con", '--console', dest="console", metavar='CONSOLE', type=str, default='sh', help='Enther the console name (Default "sh").')
@@ -265,16 +334,10 @@ def createParser():
 	group4.add_argument ('-limit', '--limit', action='store_true', default=False, help='Limit the log file. Every day the contents of the log will be completely erased.')
 	group4.add_argument ('-viewlog', '--viewlog', action='store_true', default=False, help='View the log file.')
 	group4.add_argument ('-latest', '--latest', action='store_true', default=False, help='Output everything from the log by the last record date.')
-	group4.add_argument("-fil", "-filtering", '--filtering', dest="filtering", metavar='FILTERING', type=str, default='', help='Filter the log output.')
 	group4.add_argument ('-resetlog', '--resetlog', action='store_true', default=False, help='Reset the log file.')
 	
-	dict_parser = { 'parser': parser,  'subparsers': subparsers, 
-					'parser_service': parser_service, 'parser_systemd': parser_systemd, 
-					'parser_blist': parser_blist, 'parser_wlist': parser_wlist,
-					'parser_activity': parser_activity,
-					'pgroup1': pgroup1, 'pgroup2': pgroup2, 'pgroup3': pgroup3,
-					'group1': group1, 'group2': group2, 'group3': group3, 'group4': group4
-					}
+	dict_parser['group4'] = group4
+	
 	return dict_parser
 
 def read_write_json(jfile, typerw, data = dict(), indent: int = 2):
@@ -626,14 +689,60 @@ def cicle_list(data_list, current_list, isadd: bool, args: Arguments):
 
 def grep_search(instr, args: Arguments):
 	''' Grep search. '''
+	global script_tmp
+	temp_file = pathlib.Path(f"{script_tmp}").resolve()
 	outstr = ''
 	if args.grep != '':
-		regexp = re.compile(args.grep)
-		match = re.finditer(regexp, instr)
-		if match:
-			re_math = [x for x in match if x != '']
-			edit_str = '\n'.join(list(map(lambda x: instr[:x.start()].split('\n')[-1] + instr[x.start():].split('\n')[0], re_math)))
-			outstr = edit_str
+		if args.regex or args.head or args.tail:
+			read_write_text(temp_file, 'w', instr)
+			outstr = read_write_text(temp_file, 'r')
+		if args.regex != '':
+			regexp = re.compile(args.regex)
+			if args.ignorecase:
+				match = re.finditer(regexp, outstr.lower())
+			else:
+				match = re.finditer(regexp, outstr)
+			if match:
+				re_math = [x for x in match if x != '']
+				if not args.invert:
+					if args.only:
+						if args.maxcount != 0:
+							re_maxcount = args.maxcount if args.maxcount <= len(re_math) else len(re_math)
+							edit_str = '\n'.join(outstr[re_math[x].span()[0]:re_math[x].span()[1]].split('\n')[0] for x in range(re_maxcount))
+						else:
+							edit_str = '\n'.join(list(map(lambda x: outstr[x.span()[0]:x.span()[1]].split('\n')[0], re_math)))
+					else:
+						if args.maxcount != 0:
+							re_maxcount = args.maxcount if args.maxcount <= len(re_math) else len(re_math)
+							edit_str = '\n'.join(outstr[:re_math[x].span()[0]].split('\n')[-1] + outstr[re_math[x].span()[0]:].split('\n')[0] for x in range(re_maxcount))
+						else:
+							edit_str = '\n'.join(list(map(lambda x: outstr[:x.span()[0]].split('\n')[-1] + outstr[x.span()[0]:].split('\n')[0], re_math)))
+				else:
+					if args.only:
+						if args.maxcount != 0:
+							re_maxcount = args.maxcount if args.maxcount <= len(re_math) else len(re_math)
+							edit_str = '\n'.join(outstr[:re_math[x].span()[0]].split('\n')[-1] + outstr[re_math[x].span()[1]:].split('\n')[0] for x in range(re_maxcount))
+						else:
+							edit_str = '\n'.join(list(map(lambda x: outstr[:x.span()[0]].split('\n')[-1] + outstr[x.span()[1]:].split('\n')[0], re_math)))
+					else:
+						if args.maxcount != 0:
+							re_maxcount = args.maxcount if args.maxcount <= len(re_math) else len(re_math)
+							edit_list = [outstr[:re_math[x].span()[0]].split('\n')[-1] + outstr[re_math[x].span()[0]:].split('\n')[0] for x in range(re_maxcount)]
+							edit_str = '\n'.join(list(filter(lambda x: x not in edit_list, outstr.split('\n'))))
+						else:
+							edit_list = list(map(lambda x: outstr[:x.span()[0]].split('\n')[-1] + outstr[x.span()[0]:].split('\n')[0], re_math))
+							edit_str = '\n'.join(list(filter(lambda x: x not in edit_list, outstr.split('\n'))))
+				outstr = edit_str
+		if temp_file.exists():
+			temp_file.unlink(missing_ok=True)
+		if args.head != 0:
+			if outstr == '':
+				outstr = instr
+			outstr = '\n'.join(outstr.split('\n')[:args.head])
+		if args.tail != 0:
+			if outstr == '':
+				outstr = instr
+			outstr = '\n'.join(outstr.split('\n')[-args.tail:])
 	return outstr
 
 def switch_activity(args: Arguments, case = None):
@@ -1281,7 +1390,7 @@ def servicework(args: Arguments):
 				print(switch_iptables(args, 'read'))
 				sys.exit(0)
 			args.iptables_info, err = shell_run(args.console, switch_iptables(args, 'read'))
-			if args.grep != '':
+			if args.grep:
 				grep_str = grep_search(args.iptables_info, args)
 				if grep_str != '':
 					args.iptables_info = grep_str
@@ -1305,7 +1414,7 @@ def servicework(args: Arguments):
 				args.iptables_info, err = shell_run(args.console, switch_nftables(args, 'read-tables'))
 			else:
 				args.iptables_info, err = shell_run(args.console, switch_nftables(args, 'read'))
-			if args.grep != '':
+			if args.grep:
 				grep_str = grep_search(args.iptables_info, args)
 				if grep_str != '':
 					args.iptables_info = grep_str
@@ -1553,7 +1662,10 @@ def servicework(args: Arguments):
 		AppExit(args)
 	if not args.cmd:
 		if not args.log_txt:
-			parser_dict['parser'].parse_args(['service', '-h'])
+			if args.grep:
+				parser_dict['parser'].parse_args(['service', 'grep', '-h'])
+			else:
+				parser_dict['parser'].parse_args(['service', '-h'])
 			sys.exit(0)
 
 def listwork(args: Arguments):
@@ -1775,7 +1887,10 @@ def activity_work(args: Arguments):
 		else:
 			print(f"{__progname__} {__version__}: To save the information, please enter the \"-save\" key.")
 		sys.exit(0)
-	parser_dict['parser'].parse_args(['active', '-h'])
+	if args.grep:
+		parser_dict['parser'].parse_args(['active', 'grep', '-h'])
+	else:
+		parser_dict['parser'].parse_args(['active', '-h'])
 
 def CreateTableChain(args: Arguments):
 	''' Function to create your table, chain on NFTABLES '''
@@ -1977,23 +2092,6 @@ def EditLogParam(args: Arguments):
 			ondate = datetime.now().strftime("%d.%m.%Y")
 			if file_date != ondate:
 				read_write_text(args.logfile, 'w', '\n')
-		if args.viewlog:
-			out_log_info = ''
-			if args.latest:
-				latest_date = read_write_text(args.logfile, 'r').split('\n')[-2].split(' ')[0] if not read_write_text(args.logfile, 'r').split('\n')[-1] else read_write_text(args.logfile, 'r').split('\n')[-2].split(' ')[0]
-				args.old_filtering = args.filtering
-				args.grep = args.filtering = f"{latest_date}"
-				out_log_info = grep_search(read_write_text(args.logfile, 'r'), args)
-				args.filtering = args.old_filtering
-				args.old_filtering = None
-			if args.filtering != '':
-				args.grep = args.filtering
-				out_log_info = grep_search(out_log_info if out_log_info != '' else read_write_text(args.logfile, 'r'), args)
-			if out_log_info != '':
-				print(out_log_info)
-			else:
-				print(read_write_text(args.logfile, 'r'))
-			sys.exit(0)
 		if args.resetlog:
 			read_write_text(args.logfile, 'w', '\n')
 			sys.exit(0)
@@ -2052,12 +2150,31 @@ def main(*argv):
 			print(f"{err}{_commands}")
 		sys.exit(0)
 	
+	if args.viewlog:
+		outlog_info = read_write_text(args.logfile, 'r')
+		if args.latest:
+			latest_date = read_write_text(args.logfile, 'r').split('\n')[-2].split(' ')[0] if not read_write_text(args.logfile, 'r').split('\n')[-1] else read_write_text(args.logfile, 'r').split('\n')[-2].split(' ')[0]
+			regexp = re.compile(f"{latest_date}")
+			match = re.finditer(regexp, outlog_info)
+			if match:
+				re_math = [x for x in match if x != '']
+				outlog_info = '\n'.join(list(map(lambda x: outlog_info[:x.span()[0]].split('\n')[-1] + outlog_info[x.span()[0]:].split('\n')[0], re_math)))
+		if args.grep:
+			edit_outlog_info = grep_search(outlog_info, args)
+			if edit_outlog_info != '':
+				outlog_info = edit_outlog_info
+		print(outlog_info)
+		sys.exit(0)
+	
 	if args.onlist != None:
 		func.get(args.onlist)(args)
 	else:
 		if args.exit:
 			AppExit(args)
-		parser_dict['parser'].parse_args(['-h'])
+		if args.grep:
+			parser_dict['parser'].parse_args(['grep','-h'])
+		else:
+			parser_dict['parser'].parse_args(['-h'])
 
 if __name__ == '__main__':
 	main()
