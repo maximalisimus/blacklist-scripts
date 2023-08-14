@@ -30,7 +30,7 @@ __maintainer__ = "Mikhail Artamonov"
 __email__ = "maximalis171091@yandex.ru"
 __status__ = "Production"
 __date__ = '09.07.2023'
-__modifed__ = '12.08.2023'
+__modifed__ = '14.08.2023'
 __contact__ = 'VK: https://vk.com/shadow_imperator'
 
 infromation = f"Author: {__author__}\nProgname: {__progname__}\nVersion: {__version__}\n" + \
@@ -140,6 +140,51 @@ class Arguments:
 				'\n\t'.join(f"{x}: {getattr(self, x)}" for x in dir(self) if not x in except_list and '__' not in x)
 				#'\n\t'.join(tuple(map(lambda x: f"{x}: {getattr(self, x)}" if not x in except_list else f"", tuple(filter( lambda x: '__' not in x, dir(self))))))
 
+class AppendBool(argparse.Action):
+	
+	def __init__(self,
+                 option_strings,
+                 dest,
+                 nargs=None,
+                 const=None,
+                 default=None,
+                 type=None,
+                 choices=None,
+                 required=False,
+                 help=None,
+                 metavar=None):
+		super(AppendBool, self).__init__(option_strings=option_strings,
+            dest=dest,
+            nargs=nargs,
+            const=const,
+            default=default,
+            type=type,
+            choices=choices,
+            required=required,
+            help=help,
+            metavar=metavar)
+	
+	def __call__(self, parser, namespace, values, option_string=None):
+		def on_copy_items(items):
+			if items is None:
+				return []
+			if type(items) is list:
+				return items[:]
+			import copy
+			return copy.copy(items)
+		items = getattr(namespace, self.dest, None)
+		items = on_copy_items(items)
+		if len(values) == 0:
+			items.append(self.const)
+		else:
+			for elem in values:
+				val = str(elem[0].upper() + elem[1:].lower())
+				if str(self.const) == val:
+					items.append(self.const)
+				else:
+					items.append(not self.const)
+		setattr(namespace, self.dest, items)
+
 def createParser():
 	''' The function of creating a parser with a certain hierarchy 
 		of calls. Returns the parser itself and the sub-parser, 
@@ -171,11 +216,11 @@ def createParser():
 			current_parser = pars_dict[name_sub]
 		if current_parser != None:
 			pars_dict[name_parser] = current_parser.add_parser('grep', help='Filtering of data output to the display or to a file.')
-			pars_dict[name_parser].add_argument("-R", "-regex", '--regex', dest="regex", metavar='REGEX', type=str, default='', help='Regular expression.')
-			pars_dict[name_parser].add_argument("-M", "-maxcount", '--maxcount', dest="maxcount", metavar='MAXCOUNT', type=int, default=0, help='Stop after the specified NUMBER of matched rows')
-			pars_dict[name_parser].add_argument ('-I','-ignorecase', '--ignorecase', action='store_true', default=False, help='Ignore the case of the string.')
-			pars_dict[name_parser].add_argument ('-v','-invert', '--invert', action='store_true', default=False, help='Select unsuitable lines.')
-			pars_dict[name_parser].add_argument ('-O','-only', '--only', action='store_true', default=False, help='Show only matched non-empty parts of strings')
+			pars_dict[name_parser].add_argument("-R", "-regex", '--regex', metavar='REGEX', type=str, default=[], nargs='+', help='Regular expression.')
+			pars_dict[name_parser].add_argument("-M", "-maxcount", '--maxcount', metavar='MAXCOUNT', type=int, default=[], nargs='+', help='Stop after the specified NUMBER of matched rows')
+			pars_dict[name_parser].add_argument ('-I','-ignorecase', '--ignorecase', action=AppendBool, const=True, type=str, nargs='*', default=[], help='Ignore the case of the string.')
+			pars_dict[name_parser].add_argument ('-v','-invert', '--invert', action=AppendBool, const=True, type=str, nargs='*', default=[], help='Select unsuitable lines.')
+			pars_dict[name_parser].add_argument ('-O','-only', '--only', action=AppendBool, const=True, type=str, nargs='*', default=[], help='Show only matched non-empty parts of strings')
 			pars_dict[name_parser].add_argument("-H", "-head", '--head', dest="head", metavar='HEAD', type=int, default=0, help='Print only the first N lines.')
 			pars_dict[name_parser].add_argument("-T", "-tail", '--tail', dest="tail", metavar='TAIL', type=int, default=0, help='Print only the last N lines.')
 			pars_dict[name_parser].set_defaults(grep=True)
@@ -339,6 +384,11 @@ def createParser():
 	dict_parser['group4'] = group4
 	
 	return dict_parser
+
+def expand_params(lst1: list, lst2: list, value):
+	if len(lst1) < len(lst2):
+		for k in range(len(lst1), len(lst2)):
+			lst1.append(value)
 
 def read_write_json(jfile, typerw, data = dict(), indent: int = 2):
 	''' The function of reading and writing JSON objects. '''
@@ -693,46 +743,57 @@ def grep_search(instr, args: Arguments):
 	temp_file = pathlib.Path(f"{script_tmp}").resolve()
 	outstr = ''
 	if args.grep != '':
-		if args.regex or args.head or args.tail:
+		expand_params(args.maxcount, args.regex, 0)
+		expand_params(args.ignorecase, args.regex, False)
+		expand_params(args.invert, args.regex, False)
+		expand_params(args.only, args.regex, False)
+		if len(args.regex) > 0 or args.head or args.tail:
 			read_write_text(temp_file, 'w', instr)
 			outstr = read_write_text(temp_file, 'r')
-		if args.regex != '':
-			regexp = re.compile(args.regex)
-			if args.ignorecase:
-				match = re.finditer(regexp, outstr.lower())
-			else:
-				match = re.finditer(regexp, outstr)
-			if match:
-				re_math = [x for x in match if x != '']
-				if not args.invert:
-					if args.only:
-						if args.maxcount != 0:
-							re_maxcount = args.maxcount if args.maxcount <= len(re_math) else len(re_math)
-							edit_str = '\n'.join(outstr[re_math[x].span()[0]:re_math[x].span()[1]].split('\n')[0] for x in range(re_maxcount))
-						else:
-							edit_str = '\n'.join(list(map(lambda x: outstr[x.span()[0]:x.span()[1]].split('\n')[0], re_math)))
-					else:
-						if args.maxcount != 0:
-							re_maxcount = args.maxcount if args.maxcount <= len(re_math) else len(re_math)
-							edit_str = '\n'.join(outstr[:re_math[x].span()[0]].split('\n')[-1] + outstr[re_math[x].span()[0]:].split('\n')[0] for x in range(re_maxcount))
-						else:
-							edit_str = '\n'.join(list(map(lambda x: outstr[:x.span()[0]].split('\n')[-1] + outstr[x.span()[0]:].split('\n')[0], re_math)))
+		for k in range(len(args.regex)):
+			current_regex = args.regex[k]
+			current_ignorecase = args.ignorecase[k] if len(args.ignorecase) >= len(args.regex) else False
+			current_invert = args.invert[k] if len(args.invert) >= len(args.regex) else False
+			current_only = args.only[k] if len(args.only) >= len(args.regex) else False
+			current_maxcount = args.maxcount[k] if len(args.maxcount) >= len(args.regex) else 0
+			if current_regex != '':
+				if current_ignorecase:
+					regexp = re.compile(current_regex.lower())
+					match = re.finditer(regexp, outstr.lower())
 				else:
-					if args.only:
-						if args.maxcount != 0:
-							re_maxcount = args.maxcount if args.maxcount <= len(re_math) else len(re_math)
-							edit_str = '\n'.join(outstr[:re_math[x].span()[0]].split('\n')[-1] + outstr[re_math[x].span()[1]:].split('\n')[0] for x in range(re_maxcount))
+					regexp = re.compile(current_regex)
+					match = re.finditer(regexp, outstr)
+				if match:
+					re_math = [x for x in match if x != '']
+					if not current_invert:
+						if current_only:
+							if current_maxcount != 0:
+								re_maxcount = current_maxcount if current_maxcount <= len(re_math) else len(re_math)
+								edit_str = '\n'.join(outstr[re_math[x].span()[0]:re_math[x].span()[1]].split('\n')[0] for x in range(re_maxcount))
+							else:
+								edit_str = '\n'.join(list(map(lambda x: outstr[x.span()[0]:x.span()[1]].split('\n')[0], re_math)))
 						else:
-							edit_str = '\n'.join(list(map(lambda x: outstr[:x.span()[0]].split('\n')[-1] + outstr[x.span()[1]:].split('\n')[0], re_math)))
+							if current_maxcount != 0:
+								re_maxcount = current_maxcount if current_maxcount <= len(re_math) else len(re_math)
+								edit_str = '\n'.join(outstr[:re_math[x].span()[0]].split('\n')[-1] + outstr[re_math[x].span()[0]:].split('\n')[0] for x in range(re_maxcount))
+							else:
+								edit_str = '\n'.join(list(map(lambda x: outstr[:x.span()[0]].split('\n')[-1] + outstr[x.span()[0]:].split('\n')[0], re_math)))
 					else:
-						if args.maxcount != 0:
-							re_maxcount = args.maxcount if args.maxcount <= len(re_math) else len(re_math)
-							edit_list = [outstr[:re_math[x].span()[0]].split('\n')[-1] + outstr[re_math[x].span()[0]:].split('\n')[0] for x in range(re_maxcount)]
-							edit_str = '\n'.join(list(filter(lambda x: x not in edit_list, outstr.split('\n'))))
+						if current_only:
+							if current_maxcount != 0:
+								re_maxcount = current_maxcount if current_maxcount <= len(re_math) else len(re_math)
+								edit_str = '\n'.join(outstr[:re_math[x].span()[0]].split('\n')[-1] + outstr[re_math[x].span()[1]:].split('\n')[0] for x in range(re_maxcount))
+							else:
+								edit_str = '\n'.join(list(map(lambda x: outstr[:x.span()[0]].split('\n')[-1] + outstr[x.span()[1]:].split('\n')[0], re_math)))
 						else:
-							edit_list = list(map(lambda x: outstr[:x.span()[0]].split('\n')[-1] + outstr[x.span()[0]:].split('\n')[0], re_math))
-							edit_str = '\n'.join(list(filter(lambda x: x not in edit_list, outstr.split('\n'))))
-				outstr = edit_str
+							if current_maxcount != 0:
+								re_maxcount = current_maxcount if current_maxcount <= len(re_math) else len(re_math)
+								edit_list = [outstr[:re_math[x].span()[0]].split('\n')[-1] + outstr[re_math[x].span()[0]:].split('\n')[0] for x in range(re_maxcount)]
+								edit_str = '\n'.join(list(filter(lambda x: x not in edit_list, outstr.split('\n'))))
+							else:
+								edit_list = list(map(lambda x: outstr[:x.span()[0]].split('\n')[-1] + outstr[x.span()[0]:].split('\n')[0], re_math))
+								edit_str = '\n'.join(list(filter(lambda x: x not in edit_list, outstr.split('\n'))))
+					outstr = edit_str
 		if temp_file.exists():
 			temp_file.unlink(missing_ok=True)
 		if args.head != 0:
@@ -745,12 +806,6 @@ def grep_search(instr, args: Arguments):
 			outstr = '\n'.join(outstr.split('\n')[-args.tail:])
 	return outstr
 
-def switch_activity(args: Arguments, case = None):
-	''' Selecting a command to execute in the command shell. '''
-	return {
-			'search': f"sudo cat \"{args.current_log}\" | grep -Ei \"{args.current_ip}\""
-	}.get(case, None)
-
 def search_activity(args: Arguments):
 	''' Search for activity in logs. '''
 	args.old_counts = -1
@@ -761,38 +816,55 @@ def search_activity(args: Arguments):
 	out_info = ''
 	out_err = ''
 	out_commands = ''
-	if args.cmd:
-		for on_log in args.search:
-			args.current_log = str(on_log)
-			for ip in data:
-				args.current_ip = ip_no_mask(ip)
-				current_commands = switch_activity(args, 'search')
-				print(current_commands)
-		if args.old_counts == 0:
-			args.count = 0
-		args.current_ip = None
-		args.current_log = None
-		sys.exit(0)
+	
+	args.old_grep = args.grep
+	args.old_regex = args.regex
+	args.old_maxcount = args.maxcount
+	args.old_ignorecase = args.ignorecase
+	args.old_invert = args.invert
+	args.old_only = args.only
+	args.old_head = args.head
+	args.old_tail = args.tail
+	
+	args.grep = True
+	args.regex = []
+	args.maxcount = []
+	args.ignorecase = []
+	args.invert = []
+	args.only = []
+	args.head = 0
+	args.tail = 0
+	
 	for on_log in args.search:
-		args.current_log = str(on_log)
+		args.current_log = str(on_log)		
 		for ip in data:
 			args.current_ip = ip_no_mask(ip)
-			current_commands = switch_activity(args, 'search')
-			if current_commands != None:
-				service_info, err = shell_run(args.console, current_commands)
-				if service_info != '':
-					out_commands += f"\n{current_commands}"
-					out_info += f"\n{service_info}"
-				if err != '':
-					out_err += err
+			args.regex.clear()
+			args.regex.append(args.current_ip)
+			service_info = grep_search(read_write_text(args.current_log, 'r'), args)
+			if service_info != '':
+				out_info += f"\n\n{service_info}"
 	if out_info != '':
-		read_write_text(args.filelog, 'a', out_info)
-	if out_err != '':
-		read_write_text(args.filelog, 'a', f"{out_err}{out_commands}")
+		if args.save:
+			read_write_text(args.filelog, 'a', out_info)
+		else:
+			print(out_info)
 	if args.old_counts == 0:
 		args.count = 0
 	args.current_ip = None
 	args.current_log = None
+	
+	args.grep = args.old_grep
+	args.regex = args.old_regex
+	args.maxcount = args.old_maxcount
+	args.ignorecase = args.old_ignorecase
+	args.invert = args.old_invert
+	args.only = args.old_only
+	args.head = args.old_head
+	args.tail = args.old_tail
+	
+	args.old_grep = args.old_regex = args.old_maxcount = args.old_ignorecase = None
+	args.old_invert = args.old_only = args.old_head = args.old_tail = None
 
 def choice_list_net():
 	return f"ls /sys/class/net | xargs"
@@ -1877,9 +1949,9 @@ def activity_work(args: Arguments):
 					data = data_filter
 			if args.save:
 				args.output = pathlib.Path(str(args.output)).resolve()
-				read_write_text(args.output, 'w', data)
+				read_write_text(args.output, 'w', data + '\n')
 			else:
-				print(data)
+				print(data + '\n')
 		sys.exit(0)
 	if args.empty:
 		if args.save:
