@@ -98,6 +98,50 @@ systemd_timer_file = pathlib.Path('/etc/systemd/system/blacklist@.timer').resolv
 parser_dict = ""
 logger = ""
 
+parser_b_param = {
+					'title': 'black',
+					'help': 'Managing blacklists.',
+					'ban': 'Block IP addresses in {IP,IP6,NF}TABLES.',
+					'unban': 'Unblock IP addresses in {IP,IP6,NF}TABLES.',
+					'add': 'Add to the blacklist.',
+					'delete': 'Remove from the blacklist.',
+					'show': 'View the blacklist.',
+					'json': 'JSON fromat show.',
+					'indent': 'JSON indent (Default: 2).',
+					'save': 'Save show info.',
+					'json_black': f"{json_black}",
+					'output': 'Output blacklist file.',
+					'clear': 'Clear the blacklist. Use carefully!',
+					'onlist': 'black',
+					'group-title': 'Addressing',
+					'group-help': 'IP address management.',
+					'group-ip': 'IP addresses.',
+					'group-mask': 'Network Masks.',
+					'group-no-ip': 'Do not show these ip addresses when viewing.',
+				}
+
+parser_w_param = {
+					'title': 'white',
+					'help': 'Managing whitelists.',
+					'ban': 'Allow ip addresses in {IP,IP6,NF}TABLES.',
+					'unban': 'Remove permissions from {IP,IP6,NF}TABLES.',
+					'add': 'Add to the whitelist.',
+					'delete': 'Remove from the whitelist.',
+					'show': 'View the blacklist.',
+					'json': 'JSON fromat show.',
+					'indent': 'JSON indent (Default: 2).',
+					'save': 'ave show info.',
+					'json_black': f"{json_white}",
+					'output': 'Output whitelist file.',
+					'clear': 'Clear the whitelist. Use carefully!',
+					'onlist': 'white',
+					'group-title': 'Addressing',
+					'group-help': 'IP address management.',
+					'group-ip': 'IP addresses.',
+					'group-mask': 'Network Masks.',
+					'group-no-ip': 'Do not show these ip addresses when viewing.',
+				}
+
 class Arguments:
 	''' Class «Arguments».
 	
@@ -208,6 +252,7 @@ def createParser():
 		pars_dict[name_group] = pars_dict[name_parser].add_argument_group(perser_texts['group-title'], perser_texts['group-help'])
 		pars_dict[name_group].add_argument("-ip", '--ip', metavar='IP', type=str, default=[], nargs='+', help=perser_texts['group-ip'])
 		pars_dict[name_group].add_argument("-m", '--mask', dest="mask", metavar='MASK', type=int, default=[], nargs='+', help=perser_texts['group-mask'])
+		pars_dict[name_group].add_argument("-noip", '--noip', metavar='NOIP', type=str, default=[], nargs='+', help=perser_texts['group-no-ip'])
 	
 	def create_grep_parser(pars_dict: dict, current_parser = None, name_parser: str = '', current_sub = '', name_sub = ''):
 		''' Create on grep parser or subparser. '''
@@ -225,7 +270,7 @@ def createParser():
 			pars_dict[name_parser].add_argument("-T", "-tail", '--tail', dest="tail", metavar='TAIL', type=int, default=0, help='Print only the last N lines.')
 			pars_dict[name_parser].set_defaults(grep=True)
 	
-	global json_black, json_white, workdir, log_file, log_activity_file
+	global json_black, json_white, workdir, log_file, log_activity_file, parser_b_param, parser_w_param
 	
 	dict_parser = dict()
 	
@@ -256,6 +301,8 @@ def createParser():
 	
 	dict_parser['parser_systemd'] = parser_systemd
 	
+	create_grep_parser(dict_parser, None, 'grep_systemd_parser', dict_parser['parser_systemd'], 'systemd_grep_sub')
+	
 	parser_service = subparsers.add_parser('service', help='Program management.')
 	parser_service.add_argument ('-start', '--start', action='store_true', default=False, help='Launching the blacklist.')
 	parser_service.add_argument ('-stop', '--stop', action='store_true', default=False, help='Stopping the blacklist.')
@@ -273,48 +320,8 @@ def createParser():
 	
 	create_grep_parser(dict_parser, None, 'grep_service_parser', dict_parser['parser_service'], 'service_grep_sub')
 	
-	parser_b_param = {
-						'title': 'black',
-						'help': 'Managing blacklists.',
-						'ban': 'Block IP addresses in {IP,IP6,NF}TABLES.',
-						'unban': 'Unblock IP addresses in {IP,IP6,NF}TABLES.',
-						'add': 'Add to the blacklist.',
-						'delete': 'Remove from the blacklist.',
-						'show': 'Read the blacklist.',
-						'json': 'JSON fromat show.',
-						'indent': 'JSON indent (Default: 2).',
-						'save': 'Save show info.',
-						'json_black': f"{json_black}",
-						'output': 'Output blacklist file.',
-						'clear': 'Clear the blacklist. Use carefully!',
-						'onlist': 'black',
-						'group-title': 'Addressing',
-						'group-help': 'IP address management.',
-						'group-ip': 'IP addresses.',
-						'group-mask': 'Network Masks.',
-					}
 	add_black_white_subparser(parser_b_param, subparsers, dict_parser, 'parser_blist', 'pgroup1')
 	
-	parser_w_param = {
-						'title': 'white',
-						'help': 'Managing whitelists.',
-						'ban': 'Allow ip addresses in {IP,IP6,NF}TABLES.',
-						'unban': 'Remove permissions from {IP,IP6,NF}TABLES.',
-						'add': 'Add to the whitelist.',
-						'delete': 'Remove from the whitelist.',
-						'show': 'Read the whitelist.',
-						'json': 'JSON fromat show.',
-						'indent': 'JSON indent (Default: 2).',
-						'save': 'ave show info.',
-						'json_black': f"{json_white}",
-						'output': 'Output whitelist file.',
-						'clear': 'Clear the whitelist. Use carefully!',
-						'onlist': 'white',
-						'group-title': 'Addressing',
-						'group-help': 'IP address management.',
-						'group-ip': 'IP addresses.',
-						'group-mask': 'Network Masks.',
-					}
 	add_black_white_subparser(parser_w_param, subparsers, dict_parser, 'parser_wlist', 'pgroup2')
 	
 	create_grep_parser(dict_parser, subparsers, 'grep_parser')
@@ -364,8 +371,12 @@ def createParser():
 	pgroup3 = parser_activity.add_argument_group('Addressing', 'IP address management.')
 	pgroup3.add_argument("-ip", '--ip', metavar='IP', type=str, default=[], nargs='+', help='IP addresses.')
 	
+	pgroup4 = parser_activity.add_argument_group('Settings', 'Configuration activity.')
+	pgroup4.add_argument ('-sep', '--sep', action='store_true', default=False, help='Separator.')
+	
 	dict_parser['parser_activity'] = parser_activity
 	dict_parser['pgroup3'] = pgroup3
+	dict_parser['pgroup4'] = pgroup4
 	
 	create_grep_parser(dict_parser, None, 'grep_active_parser', dict_parser['parser_activity'], 'active_grep_sub')
 	
@@ -814,7 +825,6 @@ def search_activity(args: Arguments):
 		args.count = 1
 	data = show_json(args.blacklist_json, args.count) if len(args.ip) == 0 else args.ip
 	out_info = ''
-	out_err = ''
 	out_commands = ''
 	
 	args.old_grep = args.grep
@@ -844,11 +854,7 @@ def search_activity(args: Arguments):
 			service_info = grep_search(read_write_text(args.current_log, 'r'), args)
 			if service_info != '':
 				out_info += f"\n\n{service_info}"
-	if out_info != '':
-		if args.save:
-			read_write_text(args.filelog, 'a', out_info)
-		else:
-			print(out_info)
+	
 	if args.old_counts == 0:
 		args.count = 0
 	args.current_ip = None
@@ -865,6 +871,7 @@ def search_activity(args: Arguments):
 	
 	args.old_grep = args.old_regex = args.old_maxcount = args.old_ignorecase = None
 	args.old_invert = args.old_only = args.old_head = args.old_tail = None
+	return out_info
 
 def choice_list_net():
 	return f"ls /sys/class/net | xargs"
@@ -1214,6 +1221,10 @@ def systemdwork(args: Arguments):
 				sys.exit(0)
 			service_info, err = shell_run(args.console, switch_systemd('status', args.count))
 			if service_info != '':
+				if args.grep:
+					service_edit = grep_search(service_info, args)
+					if service_edit != '':
+						service_info = service_edit
 				print(f"{service_info}")
 			if err != '':
 				_commands = switch_systemd('status', args.count)
@@ -1750,6 +1761,11 @@ def listwork(args: Arguments):
 	def show_list(args: Arguments):
 		''' Displaying information on the screen, 
 			according to the specified criteria. '''
+		def check_ip_in_list(lst: list, on_ip: str) -> bool:
+			for k in lst:
+				if k in on_ip:
+					return True
+			return False
 		data = ''
 		jobj = args.blacklist_json if args.onlist == 'black' else args.whitelist_json
 		dict_filter  = dict()
@@ -1758,7 +1774,11 @@ def listwork(args: Arguments):
 			for elem in range(len(args.ip)):
 				for x, y in jobj.items():
 					if str(args.ip[elem]) in x:
-						dict_filter[x] = y
+						if len(args.noip) > 0:
+							if not check_ip_in_list(args.noip, x):
+								dict_filter[x] = y
+						else:
+							dict_filter[x] = y
 		if not args.json:
 			if dict_filter:
 				data = '\n'.join(show_json(dict_filter, args.count))
@@ -1936,9 +1956,18 @@ def listwork(args: Arguments):
 
 def activity_work(args: Arguments):
 	''' Working with the IP address activity log. '''
+	global parser_dict
 	if args.search:
 		read_list(args)
-		search_activity(args)
+		activity_info = search_activity(args)
+		if args.grep:
+			activity_edit = grep_search(activity_info, args)
+			if activity_edit != '':
+				activity_info = activity_edit
+		if args.save:
+			read_write_text(args.filelog, 'a', activity_info)
+		else:
+			print(activity_info)
 		sys.exit(0)
 	if args.show:
 		if args.filelog.exists():
