@@ -1,6 +1,10 @@
 from setuptools import setup, find_packages
 from os.path import join, dirname
 
+# python setup.py sdist bdist_wheel
+# python setup.py install
+# pip install .
+
 setup(
     name='blacklist-scripts',
     version='2.4.3',
