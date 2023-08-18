@@ -30,7 +30,7 @@ __maintainer__ = "Mikhail Artamonov"
 __email__ = "maximalis171091@yandex.ru"
 __status__ = "Production"
 __date__ = '09.07.2023'
-__modifed__ = '14.08.2023'
+__modifed__ = '18.08.2023'
 __contact__ = 'VK: https://vk.com/shadow_imperator'
 
 infromation = f"Author: {__author__}\nProgname: {__progname__}\nVersion: {__version__}\n" + \
@@ -1977,8 +1977,13 @@ def activity_work(args: Arguments):
 				if data_filter != '':
 					data = data_filter
 			if args.save:
-				args.output = pathlib.Path(str(args.output)).resolve()
-				read_write_text(args.output, 'w', data + '\n')
+				if str(args.output) != '':
+					if args.output != None:
+						read_write_text(args.output, 'a', data + '\n')
+					else:
+						print(data + '\n')
+				else:
+					print(data + '\n')
 			else:
 				print(data + '\n')
 		sys.exit(0)
