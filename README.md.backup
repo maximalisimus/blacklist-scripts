@@ -312,6 +312,66 @@ options:
 
 Ещё одно пояснение касается выбора протокола **-ipv6**. Вообще при вводе ip-адресов протокол определяется автоматически и также автоматически корректируется. Однако, протокол можно принудительно поменять.
 
+Использование **&laquo;grep&raquo;**. Этот момент стоит выделить отдельно. Дело в том, что при использовании стандартной утилиты **Linux** вы будете подключать её по конвееру с разным набором аргументов командной строки. Это не слишком удобно. 
+
+В версии варианта утилиты в данном скрипте сильно отличается, но при этом, стандартный функционал немного расширен для получения необходимых выходных данных. Остальных аргументов пока не предусмотрено в данном интерфейсе.
+
+Например, я хочу посмотреть стандартный журнал событий скрипта, весь журнал. При этом, я хочу убрать из вывода некоторые строки и показать только те строки, в которых есть адреса с определённым набором цифр в ip-адресе. Пусть из вывода будут убраны строки содержащие **&laquo;start|ban|unban&raquo;** не зависимо от регистра. И пусть в выводе лога событий будут только адреса с цифрами **&laquo;159&raquo;** и **&laquo;193&raquo;**.
+
+Для этого я могу воспользоваться такой командой.
+
+```bash
+./pyblacklist.py -viewlog grep -R "start|ban|unban" -I -v -R "159|193"
+```
+
+Или такой.
+
+```bash
+./pyblacklist.py -viewlog grep -R "start|ban|unban" "159|193" -I -v
+```
+
+Я даже могу выполнить такую команду.
+
+```bash
+./pyblacklist.py -viewlog grep -R "start|ban|unban" -I true false -v true false -R "159|193"
+```
+
+Или такую.
+
+```bash
+/pyblacklist.py -viewlog grep -R "start|ban|unban" -I -I false -v -v false -R "159|193"
+```
+
+И даже такую.
+
+```bash
+./pyblacklist.py -viewlog grep -R "start|ban|unban" "159|193" -I true false -v true false
+```
+
+И такую.
+
+```bash
+/pyblacklist.py -viewlog grep -R "start|ban|unban" "159|193" -I -I false -v -v false
+```
+
+По умолчанию аргумент **-head** равен **-1**, а аргумент **-tail** - нулю. Чтобы убрать только последнюю строку из вывода можно написать так.
+
+ ```bash
+./pyblacklist.py -viewlog grep -R "start|ban|unban" -I -I false -v -v false -R "159|193" -H
+```
+
+А можно, вообще продолжить фильтровать. Например, вы забылись и сосредоточившись на своих мыслях написали такую команду.
+
+ ```bash
+./pyblacklist.py -viewlog grep -R "start|ban|unban" -I -I false -v -v false -R "159|193" -H 5 -R "159" -v -H 1
+```
+
+Так тоже будет работать. Все эти **grep** команды фильтрации вполне применимы при использовании 3 других меню - **&laquo;systemd&raquo;**, **&laquo;service&raquo;** и **&laquo;active&raquo;**.
+
+В меню **systemd** - при использовании ключа **-status**. В меню **service** - при использовании ключа **-show**. 
+
+В меню **active** - и при использовании ключа **-search**, и при использовании ключа **-s** или **--show**. В этом меню использовать одновременно **-search** и **--show** нельзя! Подробнее читайте под этим меню.
+
 Рассмотрим меню Systemd.
 
 ```bash
@@ -605,6 +665,10 @@ $ ./py-blacklist.py active -search /var/log/nginx/access.log /var/log/my_service
 
 Вот другой пример сканирования тех же самых файлов журналов **NGINX** на активность. Однако, здесь будет сканирование непосредственно заданных ip-адресов через ключ **-ip**.
 
+Переключение с черного списка на ip-адреса, которые указывает пользователь с помощью ключа **-ip**, производится автоматически. При этом, чтобы отделить команды **grep** от ip-адресов, используется так называемый разделитель - ключ **-sep**. Этот аргумент никак не используется, кроме корректного разделения аргументов ip-адресов и команд утилиты **grep**.
+
+В этом меню вывод анализа из файлов **-search** будет производится в файл по умолчанию - под ключом **-filelog**. Вывод на экран по ключу **-s** или **--show** можно перенаправить в файл только задав 2 ключа - файл по ключу **-o** или **--output**, в который вы хотите сохранить результат, и ключ сохранения результата **-save**.
+
 ```bash
 $ sudo ./py-blacklist.py active -ip 172.96.172.196/32 35.247.128.229/32 34.101.106.173/32 146.190.24.151/32 193.35.18.89/32 -search /var/log/nginx/access.log /var/log/my_service/access.log
 ```
@@ -797,7 +861,7 @@ The Fail2Ban black and white lists in Python.
 
 options:
   -h, --help            show this help message and exit
-  -v, --version         Version.
+  -V, --version         Version.
   -info, --info         Information about the author.
 
 Management:
@@ -940,6 +1004,65 @@ When specifying the **-net** key, it becomes possible to bind a lock or a permis
 Accordingly, using the **-lslan** key, you can view a list of all available network interfaces.
 
 Another explanation concerns the choice of protocol **-ipv6**. In general, when entering ip addresses, the protocol is determined automatically and also automatically corrected. However, the protocol can be forcibly changed.
+
+Using **&laquo;grep&raquo;**. This point should be highlighted separately. The fact is that when using the standard **Linux** utility, you will connect it along the pipeline with a different set of command-line arguments. It's not too convenient. 
+
+The version of the utility variant in this script is very different, but at the same time, the standard functionality is slightly expanded to obtain the necessary output data. The rest of the arguments are not yet provided in this interface.
+
+For example, I want to see the standard script event log, the entire log. At the same time, I want to remove some lines from the output and show only those lines in which there are addresses with a certain set of digits in the ip address. Let the lines containing **&laquo;start|ban|unban&raquo;** be removed from the output regardless of the case. And let the output of the event log contain only addresses with the digits **159** and **193**.
+
+To do this, I can use this command.
+
+```bash
+./pyblacklist.py -viewlog grep -R "start|ban|unban" -I -v -R "159|193"
+```
+
+Or such.
+
+```bash
+./pyblacklist.py -viewlog grep -R "start|ban|unban" "159|193" -I -v
+```
+
+I can even execute such a command.
+
+```bash
+./pyblacklist.py -viewlog grep -R "start|ban|unban" -I true false -v true false -R "159|193"
+```
+
+Or this one.
+
+```bash
+/pyblacklist.py -viewlog grep -R "start|ban|unban" -I -I false -v -v false -R "159|193"
+```
+
+And even this one.
+
+```bash
+./pyblacklist.py -viewlog grep -R "start|ban|unban" "159|193" -I true false -v true false
+```
+
+And such.
+```bash
+/pyblacklist.py -viewlog grep -R "start|ban|unban" "159|193" -I -I false -v -v false
+```
+
+By default, the argument **-head** is equal to **-1** , and the argument **-tail** is null. To remove only the last line from the output, you can write like this.
+
+ ```bash
+./pyblacklist.py -viewlog grep -R "start|ban|unban" -I -I false -v -v false -R "159|193" -H
+```
+
+And you can, in general, continue to filter. For example, you forgot yourself and, concentrating on your thoughts, wrote such a command.
+
+ ```bash
+./pyblacklist.py -viewlog grep -R "start|ban|unban" -I -I false -v -v false -R "159|193" -H 5 -R "159" -v -H 1
+```
+
+This will also work. All these **grep** filtering commands are quite applicable when using 3 other menus - **"systemd"**, **"service"** and **"active"**.
+
+In the menu **systemd** - when using the key **-status**. In the menu **service** - when using the key **-show**. 
+
+In the menu **active** - and when using the key **-search**, and when using the key **-s** or **--show**. In this menu, you cannot use **-search** and **--show** at the same time! Read more under this menu.
 
 Consider the Systemd menu.
 
@@ -1233,6 +1356,10 @@ $ ./py-blacklist.py active -search /var/log/nginx/access.log /var/log/my_service
 ```
 
 Here is another example of scanning the same **NGINX** log files for activity. However, there will be a scan of directly specified ip addresses via the **-ip** key.
+
+Switching from the blacklist to the ip addresses specified by the user using the **-ip** key is performed automatically. At the same time, the so-called separator key **-sep** is used to separate the **grep** commands from ip addresses. This argument is not used in any way, except for the correct separation of arguments of ip addresses and commands of the **grep** utility.
+
+In this menu, the analysis output from the **-search** files will be made to the default file - under the key **-file log**. Output to the screen by the key **-s** or **--show** you can redirect to a file only by setting 2 keys - the file by the key **-o** or **--output**, to which you want to save the result, and the result saving key **-save**.
 
 ```bash
 $ sudo ./py-blacklist.py active -ip 172.96.172.196/32 35.247.128.229/32 34.101.106.173/32 146.190.24.151/32 193.35.18.89/32 -search /var/log/nginx/access.log /var/log/my_service/access.log

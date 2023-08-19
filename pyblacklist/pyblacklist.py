@@ -346,8 +346,8 @@ def createParser():
 			pars_dict[name_parser].add_argument ('-I','-ignorecase', '--ignorecase', action=AppendBool, const=True, type=str, nargs='*', default=[], help='Ignore the case of the string.')
 			pars_dict[name_parser].add_argument ('-v','-invert', '--invert', action=AppendBool, const=True, type=str, nargs='*', default=[], help='Select unsuitable lines.')
 			pars_dict[name_parser].add_argument ('-O','-only', '--only', action=AppendBool, const=True, type=str, nargs='*', default=[], help='Show only matched non-empty parts of strings')
-			pars_dict[name_parser].add_argument("-H", "-head", '--head', dest="head", metavar='HEAD', type=int, default=0, help='Print only the first N lines.')
-			pars_dict[name_parser].add_argument("-T", "-tail", '--tail', dest="tail", metavar='TAIL', type=int, default=0, help='Print only the last N lines.')
+			pars_dict[name_parser].add_argument("-H", "-head", '--head', action=AppendINT, const=-1, type=int, nargs='*', default=[], help='Print only the first N lines.')
+			pars_dict[name_parser].add_argument("-T", "-tail", '--tail', action=AppendINT, const=0, type=int, nargs='*', default=[], help='Print only the last N lines.')
 			pars_dict[name_parser].set_defaults(grep=True)
 	
 	global json_black, json_white, workdir, log_file, log_activity_file, parser_b_param, parser_w_param
@@ -838,7 +838,7 @@ def grep_search(instr, args: Arguments):
 		expand_params(args.ignorecase, args.regex, False)
 		expand_params(args.invert, args.regex, False)
 		expand_params(args.only, args.regex, False)
-		if len(args.regex) > 0 or args.head or args.tail:
+		if len(args.regex) > 0 or len(args.head) > 0 or len(args.tail) > 0:
 			read_write_text(temp_file, 'w', instr)
 			outstr = read_write_text(temp_file, 'r')
 		for k in range(len(args.regex)):
@@ -887,14 +887,16 @@ def grep_search(instr, args: Arguments):
 					outstr = edit_str
 		if temp_file.exists():
 			temp_file.unlink(missing_ok=True)
-		if args.head != 0:
+		if len(args.head) > 0:
 			if outstr == '':
 				outstr = instr
-			outstr = '\n'.join(outstr.split('\n')[:args.head])
-		if args.tail != 0:
+			for h in range(len(args.head)):
+				outstr = '\n'.join(outstr.split('\n')[:args.head[h]])
+		if len(args.tail) > 0:
 			if outstr == '':
 				outstr = instr
-			outstr = '\n'.join(outstr.split('\n')[-args.tail:])
+			for h in range(len(args.tail)):
+				outstr = '\n'.join(outstr.split('\n')[-args.tail[h]:])
 	return outstr
 
 def search_activity(args: Arguments):
