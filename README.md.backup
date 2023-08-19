@@ -897,26 +897,30 @@ GREP menu. It is the same for all submenus in which it is used. This is the most
 ```bash
 $ ./py-blacklist.py grep
 
-usage: pyblacklist.py grep [-h] [-R [REGEX ...]] [-M [MAXCOUNT ...]]
-                           [-I [IGNORECASE ...]] [-v [INVERT ...]]
-                           [-O [ONLY ...]] [-H HEAD] [-T TAIL]
+usage: pyblacklist.py grep [-h] [-R REGEX [REGEX ...]]
+                           [-M MAXCOUNT [MAXCOUNT ...]] [-I [IGNORECASE ...]]
+                           [-v [INVERT ...]] [-O [ONLY ...]] [-H HEAD]
+                           [-T TAIL]
 
 options:
-  -h, --help            show this help message and exit
-  -R [REGEX ...], -regex [REGEX ...], --regex [REGEX ...]
-                        Regular expression.
-  -M [MAXCOUNT ...], -maxcount [MAXCOUNT ...], --maxcount [MAXCOUNT ...]
-                        Stop after the specified NUMBER of matched rows
+  -h, --help            Посмотреть помощь и выйти.
+  -R REGEX [REGEX ...], -regex REGEX [REGEX ...], --regex REGEX [REGEX ...]
+                        Регулярное выражение.
+  -M MAXCOUNT [MAXCOUNT ...], -maxcount MAXCOUNT [MAXCOUNT ...], --maxcount MAXCOUNT [MAXCOUNT ...]
+                        Остановится после указанного количества совпадающих строк.
   -I [IGNORECASE ...], -ignorecase [IGNORECASE ...], --ignorecase [IGNORECASE ...]
-                        Ignore the case of the string.
+                        Игнорировать регистр строки.
   -v [INVERT ...], -invert [INVERT ...], --invert [INVERT ...]
-                        Select unsuitable lines.
+                        Выбор неподходящих строки. 
+                        Грубо говоря, инверсия регулярного выражения.
   -O [ONLY ...], -only [ONLY ...], --only [ONLY ...]
-                        Show only matched non-empty parts of strings
+                        Показывать только совпадающие непустые части строк.
+                        Грубо говоря, выводить только часть строки из найденых, 
+                        которые совпадают с регулярным выражением.
   -H HEAD, -head HEAD, --head HEAD
-                        Print only the first N lines.
+                        Вывод только первых N строк.
   -T TAIL, -tail TAIL, --tail TAIL
-                        Print only the last N lines.
+                        Вывод только последних N строк.
 ```
 
 For the keys **NFTABLES** it is necessary to make an explanation.

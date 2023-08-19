@@ -30,7 +30,7 @@ __maintainer__ = "Mikhail Artamonov"
 __email__ = "maximalis171091@yandex.ru"
 __status__ = "Production"
 __date__ = '09.07.2023'
-__modifed__ = '18.08.2023'
+__modifed__ = '19.08.2023'
 __contact__ = 'VK: https://vk.com/shadow_imperator'
 
 infromation = f"Author: {__author__}\nProgname: {__progname__}\nVersion: {__version__}\n" + \
@@ -229,6 +229,86 @@ class AppendBool(argparse.Action):
 					items.append(not self.const)
 		setattr(namespace, self.dest, items)
 
+class AppendSTR(argparse.Action):
+	
+	def __init__(self,
+                 option_strings,
+                 dest,
+                 nargs=None,
+                 const=None,
+                 default=None,
+                 type=None,
+                 choices=None,
+                 required=False,
+                 help=None,
+                 metavar=None):
+		super(AppendSTR, self).__init__(option_strings=option_strings,
+            dest=dest,
+            nargs=nargs,
+            const=const,
+            default=default,
+            type=type,
+            choices=choices,
+            required=required,
+            help=help,
+            metavar=metavar)
+	
+	def __call__(self, parser, namespace, values, option_string=None):
+		def on_copy_items(items):
+			if items is None:
+				return []
+			if type(items) is list:
+				return items[:]
+			import copy
+			return copy.copy(items)
+		items = getattr(namespace, self.dest, None)
+		items = on_copy_items(items)
+		if len(values) > 0:
+			for elem in values:
+				items.append(elem)
+		setattr(namespace, self.dest, items)
+
+class AppendINT(argparse.Action):
+	
+	def __init__(self,
+                 option_strings,
+                 dest,
+                 nargs=None,
+                 const=None,
+                 default=None,
+                 type=None,
+                 choices=None,
+                 required=False,
+                 help=None,
+                 metavar=None):
+		super(AppendINT, self).__init__(option_strings=option_strings,
+            dest=dest,
+            nargs=nargs,
+            const=const,
+            default=default,
+            type=type,
+            choices=choices,
+            required=required,
+            help=help,
+            metavar=metavar)
+	
+	def __call__(self, parser, namespace, values, option_string=None):
+		def on_copy_items(items):
+			if items is None:
+				return []
+			if type(items) is list:
+				return items[:]
+			import copy
+			return copy.copy(items)
+		items = getattr(namespace, self.dest, None)
+		items = on_copy_items(items)
+		if len(values) == 0:
+			items.append(self.const)
+		else:
+			for elem in values:
+				items.append(elem)
+		setattr(namespace, self.dest, items)
+
 def createParser():
 	''' The function of creating a parser with a certain hierarchy 
 		of calls. Returns the parser itself and the sub-parser, 
@@ -261,8 +341,8 @@ def createParser():
 			current_parser = pars_dict[name_sub]
 		if current_parser != None:
 			pars_dict[name_parser] = current_parser.add_parser('grep', help='Filtering of data output to the display or to a file.')
-			pars_dict[name_parser].add_argument("-R", "-regex", '--regex', metavar='REGEX', type=str, default=[], nargs='+', help='Regular expression.')
-			pars_dict[name_parser].add_argument("-M", "-maxcount", '--maxcount', metavar='MAXCOUNT', type=int, default=[], nargs='+', help='Stop after the specified NUMBER of matched rows')
+			pars_dict[name_parser].add_argument("-R", "-regex", '--regex', action=AppendSTR, type=str, nargs='*', default=[], help='Regular expression.')
+			pars_dict[name_parser].add_argument("-M", "-maxcount", '--maxcount', action=AppendINT, const=0, type=int, nargs='*', default=[], help='Stop after the specified NUMBER of matched rows')
 			pars_dict[name_parser].add_argument ('-I','-ignorecase', '--ignorecase', action=AppendBool, const=True, type=str, nargs='*', default=[], help='Ignore the case of the string.')
 			pars_dict[name_parser].add_argument ('-v','-invert', '--invert', action=AppendBool, const=True, type=str, nargs='*', default=[], help='Select unsuitable lines.')
 			pars_dict[name_parser].add_argument ('-O','-only', '--only', action=AppendBool, const=True, type=str, nargs='*', default=[], help='Show only matched non-empty parts of strings')
