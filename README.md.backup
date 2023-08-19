@@ -160,7 +160,7 @@ usage: py-blacklist.py [-h] [-v] [-info] [-c COUNT] [-q QUANTITY]
 
 options:
   -h, --help            показать справку и выйти
-  -v, --version         Версия.
+  -V, --version         Версия.
   -info, --info         Информация об авторе.
 
 Управление:
@@ -897,30 +897,26 @@ GREP menu. It is the same for all submenus in which it is used. This is the most
 ```bash
 $ ./py-blacklist.py grep
 
-usage: pyblacklist.py grep [-h] [-R REGEX [REGEX ...]]
-                           [-M MAXCOUNT [MAXCOUNT ...]] [-I [IGNORECASE ...]]
-                           [-v [INVERT ...]] [-O [ONLY ...]] [-H HEAD]
-                           [-T TAIL]
+usage: pyblacklist.py grep [-h] [-R [REGEX ...]] [-M [MAXCOUNT ...]]
+                           [-I [IGNORECASE ...]] [-v [INVERT ...]]
+                           [-O [ONLY ...]] [-H HEAD] [-T TAIL]
 
 options:
-  -h, --help            Посмотреть помощь и выйти.
-  -R REGEX [REGEX ...], -regex REGEX [REGEX ...], --regex REGEX [REGEX ...]
-                        Регулярное выражение.
-  -M MAXCOUNT [MAXCOUNT ...], -maxcount MAXCOUNT [MAXCOUNT ...], --maxcount MAXCOUNT [MAXCOUNT ...]
-                        Остановится после указанного количества совпадающих строк.
+  -h, --help            show this help message and exit
+  -R [REGEX ...], -regex [REGEX ...], --regex [REGEX ...]
+                        Regular expression.
+  -M [MAXCOUNT ...], -maxcount [MAXCOUNT ...], --maxcount [MAXCOUNT ...]
+                        Stop after the specified NUMBER of matched rows
   -I [IGNORECASE ...], -ignorecase [IGNORECASE ...], --ignorecase [IGNORECASE ...]
-                        Игнорировать регистр строки.
+                        Ignore the case of the string.
   -v [INVERT ...], -invert [INVERT ...], --invert [INVERT ...]
-                        Выбор неподходящих строки. 
-                        Грубо говоря, инверсия регулярного выражения.
+                        Select unsuitable lines.
   -O [ONLY ...], -only [ONLY ...], --only [ONLY ...]
-                        Показывать только совпадающие непустые части строк.
-                        Грубо говоря, выводить только часть строки из найденых, 
-                        которые совпадают с регулярным выражением.
+                        Show only matched non-empty parts of strings
   -H HEAD, -head HEAD, --head HEAD
-                        Вывод только первых N строк.
+                        Print only the first N lines.
   -T TAIL, -tail TAIL, --tail TAIL
-                        Вывод только последних N строк.
+                        Print only the last N lines.
 ```
 
 For the keys **NFTABLES** it is necessary to make an explanation.

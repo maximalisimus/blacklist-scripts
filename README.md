@@ -160,7 +160,7 @@ usage: py-blacklist.py [-h] [-v] [-info] [-c COUNT] [-q QUANTITY]
 
 options:
   -h, --help            показать справку и выйти
-  -v, --version         Версия.
+  -V, --version         Версия.
   -info, --info         Информация об авторе.
 
 Управление:
@@ -797,7 +797,7 @@ The Fail2Ban black and white lists in Python.
 
 options:
   -h, --help            show this help message and exit
-  -v, --version         Version.
+  -V, --version         Version.
   -info, --info         Information about the author.
 
 Management:
