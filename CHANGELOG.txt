@@ -1,4 +1,12 @@
 -----
+19.08.2023 - 15:00 GMT +3
+py-blacklist 2.5.0:
+* Added a new menu **grep**.
+* Enabling **grep** in the menu: systemd, service, active.
+* The data filtering algorithm **grep** has been completely redesigned in accordance with the features of the system utility and the necessary set of script functionality.
+* Added the technical ability to filter out unnecessary ip addresses when viewing black and white lists, including JSON format.
+* The structure of creating a command-line parser has been completely redesigned - code redundancy has been removed in a clever way.
+-----
 11.08.2023 - 19:30 GMT +3
 py-blacklist 2.4.3:
 * Fixing the "GREP" filtering of the "Netfilter" status output to the screen for IP(6)TABLES.
