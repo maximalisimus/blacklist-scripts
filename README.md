@@ -665,12 +665,30 @@ $ ./py-blacklist.py active -search /var/log/nginx/access.log /var/log/my_service
 
 Вот другой пример сканирования тех же самых файлов журналов **NGINX** на активность. Однако, здесь будет сканирование непосредственно заданных ip-адресов через ключ **-ip**.
 
-Переключение с черного списка на ip-адреса, которые указывает пользователь с помощью ключа **-ip**, производится автоматически. При этом, чтобы отделить команды **grep** от ip-адресов, используется так называемый разделитель - ключ **-sep**. Этот аргумент никак не используется, кроме корректного разделения аргументов ip-адресов и команд утилиты **grep**.
+Переключение с черного списка на ip-адреса, которые указывает пользователь с помощью ключа **-ip**, производится автоматически. При этом, чтобы отделить команды **grep** от других, используется так называемый разделитель - ключ **-sep**. Этот аргумент никак не используется, кроме корректного разделения разных аргументов командной строки.
 
 В этом меню вывод анализа из файлов **-search** будет производится в файл по умолчанию - под ключом **-filelog**. Вывод на экран по ключу **-s** или **--show** можно перенаправить в файл только задав 2 ключа - файл по ключу **-o** или **--output**, в который вы хотите сохранить результат, и ключ сохранения результата **-save**.
 
 ```bash
 $ sudo ./py-blacklist.py active -ip 172.96.172.196/32 35.247.128.229/32 34.101.106.173/32 146.190.24.151/32 193.35.18.89/32 -search /var/log/nginx/access.log /var/log/my_service/access.log
+```
+
+Например, вы захотели не только просканировать определённые файлы журналов на активность заданных вами ip-адресов, но и сосредоточиться только на заголовках результатов. Просто добавьте разделитель **-sep** и продолжайте уже с командами под-меню **grep**.
+
+```bash
+sudo ./py-blacklist.py active -ip 172.96.172.196/32 35.247.128.229/32 34.101.106.173/32 146.190.24.151/32 193.35.18.89/32 -search /var/log/nginx/access.log /var/log/my_service/access.log -sep grep -R "head" -I
+```
+
+**Обратите внимание!** Если вы не указывали ключ **-save** - результат анализа будет выведен на экран, вместо сохранения в файл по умолчанию. 
+
+```bash
+sudo ./py-blacklist.py active -save -ip 172.96.172.196/32 35.247.128.229/32 34.101.106.173/32 146.190.24.151/32 193.35.18.89/32 -search /var/log/nginx/access.log /var/log/my_service/access.log -sep grep -R "head" -I
+```
+
+Или без использования разделителя **-sep**, но тогда **-save** указывается в конце перед меню **grep**!
+
+```bash
+sudo ./py-blacklist.py active -ip 172.96.172.196/32 35.247.128.229/32 34.101.106.173/32 146.190.24.151/32 193.35.18.89/32 -search /var/log/nginx/access.log /var/log/my_service/access.log -save grep -R "head" -I
 ```
 
 Только после того, как вы просканировали лог-файлы на активность, результат, сохранённый в отдельный файл, можно посмотреть и отфильтровать вывод на экран, чтобы просто уменьшить последний.
@@ -1357,12 +1375,30 @@ $ ./py-blacklist.py active -search /var/log/nginx/access.log /var/log/my_service
 
 Here is another example of scanning the same **NGINX** log files for activity. However, there will be a scan of directly specified ip addresses via the **-ip** key.
 
-Switching from the blacklist to the ip addresses specified by the user using the **-ip** key is performed automatically. At the same time, the so-called separator key **-sep** is used to separate the **grep** commands from ip addresses. This argument is not used in any way, except for the correct separation of arguments of ip addresses and commands of the **grep** utility.
+Switching from the blacklist to the ip addresses specified by the user using the **-ip** key is performed automatically. At the same time, to separate the **grep commands** from others, the so-called key separator **-sep** is used. This argument is not used in any way, except for the correct separation of different command-line arguments.
 
-In this menu, the analysis output from the **-search** files will be made to the default file - under the key **-filelog**. Output to the screen by the key **-s** or **--show** you can redirect to a file only by setting 2 keys - the file by the key **-o** or **--output**, to which you want to save the result, and the result saving key **-save**.
+In this menu, the analysis output from the **-search** files will be made to the default file - under the key **-file log**. Output to the screen by the key **-s** or **--show** you can redirect to a file only by setting 2 keys - the file by the key **-o** or **--output**, to which you want to save the result, and the result saving key **-save**.
 
 ```bash
 $ sudo ./py-blacklist.py active -ip 172.96.172.196/32 35.247.128.229/32 34.101.106.173/32 146.190.24.151/32 193.35.18.89/32 -search /var/log/nginx/access.log /var/log/my_service/access.log
+```
+
+For example, you wanted not only to scan certain log files for the activity of the ip addresses you specified, but also to focus only on the headers of the results. Just add the separator **-sep** and continue with the commands of the **grep** submenu.
+
+```bash
+sudo ./py-blacklist.py active -ip 172.96.172.196/32 35.247.128.229/32 34.101.106.173/32 146.190.24.151/32 193.35.18.89/32 -search /var/log/nginx/access.log /var/log/my_service/access.log -sep grep -R "head" -I
+```
+
+**Please note!** If you did not specify the key **-save** - the result of the analysis will be displayed on the screen, instead of saving to the default file.
+
+```bash
+sudo ./py-blacklist.py active -save -ip 172.96.172.196/32 35.247.128.229/32 34.101.106.173/32 146.190.24.151/32 193.35.18.89/32 -search /var/log/nginx/access.log /var/log/my_service/access.log -sep grep -R "head" -I
+```
+
+Or without using the separator **-sep**, but then **-save** is indicated at the end before the menu **grep**!
+
+```bash
+sudo ./py-blacklist.py active -ip 172.96.172.196/32 35.247.128.229/32 34.101.106.173/32 146.190.24.151/32 193.35.18.89/32 -search /var/log/nginx/access.log /var/log/my_service/access.log -save grep -R "head" -I
 ```
 
 Only after you have scanned the log files for activity, the result saved in a separate file can be viewed and filtered out to the screen to simply reduce the latter.
